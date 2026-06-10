@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: triola-copywriter
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+        placeholder: "Vložte váš OpenAI API klíč (sk-proj-...)"
+      - key: ANTHROPIC_API_KEY
+        sync: false
+        placeholder: "Vložte váš Anthropic API klíč (sk-ant-...)"
+      - key: GOOGLE_API_KEY
+        sync: false
+        placeholder: "Vložte váš Google API klíč (AIzaSy...)"
+      - key: PORT
+        value: 8080
