@@ -1,0 +1,62 @@
+{
+  "podprsenky": {
+    "vyztuzena_podprsenka_s_sitymi_kosiky": {
+      "title": "VYZTUŽENÁ PODPRSENKA S ŠITÝMI KOŠÍKY",
+      "description": "Podprsenka má vyztužené spodní částí košíčků. Vyztužené části prsa podepřou, pozvednou a zafixují. Horní část bývá většinou z elastické krajky, která se dokonale přizpůsobí každému tvaru a velikosti poprsí. Tento střih je vhodný pro ženy s velkou velikostí prsů a pro ženy s asymetrií. Pocit pohodlí je umocněn měkce vypodloženými ramínky. PUSH - UP VYZTUŽENÁ PODPRSENKAleft635 Pro vás, které toužíte po větším poprsí, jsou určené podprsenky push-up. Tento typ podprsenek má vyztužené košíčky s různě velkými push-up polštářky (některé modely mají polštářky vyjímatelné, což je také jednou z variant při řešení problematiky různě velkých prsou). Podprsenky s extra (double, super) push-up efektem nejsou vhodné pro celodenní nošení."
+    },
+    "vyztuzena_podprsenka_s_bezesvymi_kosiky": {
+      "title": "VYZTUŽENÁ PODPRSENKA S BEZEŠVÝMI KOŠÍKY",
+      "description": "Bezešvý (nesešívaný) košíček je ideální pod přiléhavé oblečení. Je také vhodný pro ženy s citlivou pokožkou, kterým švy na košíčkách vadí. Vyztužené košíčky (pozor – nejedná se o push-up) prsa podepřou, pozvednou a zafixují v požadované výšce. Postava tak získá více ženské tvary a opticky zeštíhlí. Mylná je domněnka, že vyztužená podprsenka prsa zvětší. Výsledek je vždy lichotivý. Postava opticky zeštíhlí díky usazení prsou ve správné výšce. Tvar ňader se zaoblí a je docíleno       atraktivního dekoltu."
+    },
+    "samodrzici_podprsenka": {
+      "title": "SAMODRŽÍCÍ PODPRSENKA",
+      "description": "Podprsenka, často s vyztuženými košíčky, kterou lze nosit i bez ramínek. Po obvodu celé podprsenky (někdy i po celém obvodu košíčků) jsou umístěny silikonové proužky, které prádlo fixují k pokožce. Výsledný efekt ještě umocní vyšší sedlo a funkční obvod. Podprsenka držící bez ramínek, je určena pro zvláštní příležitosti, např. pod korzety. Dobře zafixuje i větší ňadra."
+    },
+    "vyztuzena_podprsenka_balkonoveho_strihu": {
+      "title": "VYZTUŽENÁ PODPRSENKA BALKONOVÉHO STŘIHU",
+      "description": "Podprsenka s vyztuženými košíčky tzv. balkonového střihu vytvoří svůdný široký dekolt, pozvedne a vystaví v něm prsa a zdůrazní souměrnost ženské postavy. Vykrojení dekoltu je téměř vodorovné. Balkonka má vyšší sedlo, ve stejné linii vysoké koše i boky. Svislé švy na koších vymodelují přirozeně kulatý tvar prsou, podprsenku zafixují na správném místě a zajistí dolehnutí kostic k tělu."
+    },
+    "vyztuzena_i_nevyztuzena_podprsenka_bez_sedla": {
+      "title": "VYZTUŽENÁ I NEVYZTUŽENÁ PODPRSENKA BEZ SEDLA",
+      "description": "Vyztužené podprsenky s kosticemi bez sedla jsou vhodné pro malé velikosti košíčků. Pro štíhlé ženy s malou velikostí (nepotřebujete fixaci, kterou sedlo přináší) nebo naopak pro silné ženy, které mají vystouplé bříško a sedlo jim překáží (platí však pouze pro velký obvod a malá prsa)."
+    },
+    "nevyztuzene_podprsenky_s_rasenymi_kosiky": {
+      "title": "NEVYZTUŽENÉ PODPRSENKY S ŘASENÝMI KOŠÍKY",
+      "description": "Pokud máte raději košíčky nevyztužené nebo vás trápí asymetrie prsou, zvolte podprsenku s řasenými košíčky. Řasení na středu podprsenky je více flexibilní a lépe se přizpůsobí velikosti prsa. Výstřih vždy krásně přilne k tělu."
+    },
+    "nevyztuzene_podprsenky_s_bocnimi_dilky_a_s_kosticemi": {
+      "title": "NEVYZTUŽENÉ PODPRSENKY S BOČNÍMI DÍLKY A S KOSTICEMI",
+      "description": "Pro velká a těžká prsa jsou dobrou volbou nevyztužené podprsenky s fixačními bočními dílky, které přecházejí do ramínek, a fixují tak ňadra na střed, tedy neumožní jejich „rozlití\" do stran. Tuto funkci má také dvojité tylové podložení uvnitř košíčků některých modelů. Pocit pohodlí je umocněn měkce vypodloženými rozšířenými ramínky, která pomohou rozložit tlak, a uleví tak šíjovým svalům."
+    },
+    "nevyztuzena_zmensovaci_podprsenka": {
+      "title": "NEVYZTUŽENÁ ZMENŠOVACÍ PODPRSENKA",
+      "description": "Zmenšovací podprsenky jsou konstruovány tak, aby prsa vypadala opticky menší. Toho je dosaženo díky nepružnému materiálu a specifickému tvaru košů. Prsa jsou směřována zepředu více do stran. Poprsí tak vypadá menší (např. na těsné halence je výsledný efekt patrný). V Triole pro zmenšovací podprsenky využíváme tepelně lisované bezešvé košíčky bez vyztužení."
+    },
+    "nevyztuzene_podprsenky_bez_kostic": {
+      "title": "NEVYZTUŽENÉ PODPRSENKY BEZ KOSTIC",
+      "description": "Nevyztužené podprsenky nejsou zpevněny kosticemi. Ňadra v nich mají více přirozený (hruškovitý) tvar. Díky absenci kostic neformují ňadra tak, jako podprsenky s kosticemi. Jsou vhodné pro ženy, které z různých důvodů nechtějí podprsenky kosticové nebo pro ženy s extra velkou velikostí obvodů i košů (u těchto velikostí se mohou kostice v oblasti podpaždí odklánět od těla). Střihy kalhotek"
+    }
+  },
+  "kalhotky": {
+    "tanga": {
+      "title": "TANGA",
+      "description": "Tanga či string kalhotky zakrývají opravdu jen to nejdůležitější. Obvykle se skládají z trojúhelníkové přední části, která je s malým trojúhelníčkem na zadním díle spojena úzkými proužky látky, v případě string pak pouze tenkými šňůrkami nebo stužkou. Jsou ideální pod přiléhavé oblečení, kde jsou de facto neviditelné."
+    },
+    "brazilky": {
+      "title": "BRAZILKY",
+      "description": "Pro obyčejné smrtelnice, které chtějí vypadat sexy, ale z důvodu pohodlí nebo pocitu přílišného odhalení tanga nosit odmítají, je zde ideální kompromis – brazilky. Pohodlné bokové střihy zahalují větší partii hýždí, takže je odhalená pouze spodní část, což postavě lichotí. Jde o optické rozdělení ploch tak, že ani ta zahalená ani ta odhalená nevypadá příliš velká. Zadní díly brazilek jsou bez bez gumiček (jejich funkci přebírají légy či elastická krajka). To zajistí neviditelnost prádla pod svrchním ošacením."
+    },
+    "klasicke_kalhotky": {
+      "title": "KLASICKÉ KALHOTKY",
+      "description": "Pro běžné nošení jsou ideální kalhotky klasické. Modely kalhotek se liší pouze výškou do pasu. Při výběru je třeba věnovat velkou pozornost správné velikosti a pevnosti gumiček v pase a nohavičkách. Volba výrazně menší velikosti se brzy změní v nepříjemné otlaky po celodenním nošení. Navíc vtlačené gumičky na bocích a zadečku, které se rýsují i přes svrchní ošacení, vypadají nevzhledně."
+    },
+    "panty": {
+      "title": "PANTY",
+      "description": "Dámské boxerky, panty a šortky má v oblibě hlavně mladá generace. Jedná se o dámské kalhotky se sníženým pasem a různě dlouhými nohavičkami. Jsou ideální volbou pro chlapecké postavy, protože opticky rozšiřují boky."
+    },
+    "stahovaci_a_formovaci_kalhotky": {
+      "title": "STAHOVACÍ A FORMOVACÍ KALHOTKY",
+      "description": "Neocenitelným pomocníkem nejen pro výjimečné příležitosti jsou kalhotky stahující a formující. Pomohou zpevnit a zaoblit boky, pozvednou pozadí a zploští bříško. Současná móda povoluje jakékoli prostředky k dosažení plochého bříška a ladně oblých tvarů. Opět je velmi důležitá zvolená velikost a střih, tak aby se tělo dostatečně zformovalo, ale na okrajích prádla nedocházelo k zaříznutí. To by pak celou snahu vytvarovat oblé linie úplně zhatilo. Tento typ kalhotek je také vhodný pro maminky po porodu, kdy ideálním způsobem zpevní oblasti bříška a pomohou k obnovení původního tvaru břišní Kontakt: Triola a.s., E: malcharkova@triola.cz"
+    }
+  }
+}

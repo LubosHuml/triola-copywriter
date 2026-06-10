@@ -8,9 +8,7 @@ __pycache__/
 *.pyd
 
 # Local caches
-products_cache.json
-marketing_cache.json
-docx_cuts_cache.json
+# products_cache.json, marketing_cache.json, docx_cuts_cache.json are committed to Git for fast startup and low RAM usage on Render.com
 
 # Local Excel uploads
 uploads/
