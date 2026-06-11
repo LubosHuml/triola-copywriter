@@ -1204,6 +1204,54 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Crawl live URL data
+    const seoBtnCrawl = document.getElementById('seo-btn-crawl');
+    if (seoBtnCrawl) {
+        seoBtnCrawl.addEventListener('click', async () => {
+            const urlVal = document.getElementById('seo-url').value.trim();
+            if (!urlVal) {
+                alert('Zadejte prosím URL adresu, kterou chcete nacrawlovat.');
+                return;
+            }
+
+            const originalBtnHtml = seoBtnCrawl.innerHTML;
+            seoBtnCrawl.disabled = true;
+            seoBtnCrawl.innerHTML = '<i data-lucide="refresh-cw" class="spin" style="width: 14px; height: 14px;"></i>';
+            lucide.createIcons();
+
+            try {
+                const response = await fetch('/api/seo/scrape', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: urlVal })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('seo-current-title').value = data.title;
+                    document.getElementById('seo-current-desc').value = data.description;
+                    document.getElementById('seo-current-h1').value = data.h1;
+
+                    // Suggest keyword if currently empty
+                    const kwInput = document.getElementById('seo-kw');
+                    if (kwInput && !kwInput.value.trim() && data.h1) {
+                        kwInput.value = data.h1.toLowerCase();
+                    }
+
+                    alert('Data z live URL byla úspěšně stažena a předvyplněna do formuláře!');
+                } else {
+                    alert(`Chyba při stahování URL: ${data.error}`);
+                }
+            } catch (err) {
+                alert(`Chyba připojení k serveru: ${err.message}`);
+            } finally {
+                seoBtnCrawl.innerHTML = originalBtnHtml;
+                seoBtnCrawl.disabled = false;
+                lucide.createIcons();
+            }
+        });
+    }
+
     // Single Form Submit
     const seoSingleForm = document.getElementById('seo-single-form');
     const seoSingleResult = document.getElementById('seo-single-result');

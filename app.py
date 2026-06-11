@@ -346,6 +346,93 @@ def seo_generate_single():
             "error": str(e)
         }), 500
 
+@app.route('/api/seo/scrape', methods=['POST'])
+def seo_scrape_page():
+    """Fetches a page by URL and extracts title, meta description, and H1."""
+    data = request.json or {}
+    url = data.get('url', '').strip()
+    
+    if not url:
+        return jsonify({"success": False, "error": "Chybí URL adresa."}), 400
+        
+    # Prepend domain if relative path
+    full_url = url
+    if not url.startswith(('http://', 'https://')):
+        # Ensure it starts with /
+        if not url.startswith('/'):
+            url = '/' + url
+        full_url = f"https://www.triola.cz{url}"
+        
+    try:
+        import requests
+        from html.parser import HTMLParser
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+        
+        response = requests.get(full_url, headers=headers, timeout=10)
+        response.raise_for_status()
+        
+        # HTMLParser needs string html
+        html_content = response.text
+        
+        class TriolaSEOHTMLParser(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.title = ""
+                self.description = ""
+                self.h1 = ""
+                self.in_title = False
+                self.in_h1 = False
+                self.h1_found = False
+
+            def handle_starttag(self, tag, attrs):
+                if tag == 'title':
+                    self.in_title = True
+                elif tag == 'h1' and not self.h1_found:
+                    self.in_h1 = True
+                elif tag == 'meta':
+                    attr_dict = dict(attrs)
+                    name_val = attr_dict.get('name', '').lower()
+                    if name_val == 'description':
+                        self.description = attr_dict.get('content', '')
+
+            def handle_endtag(self, tag):
+                if tag == 'title':
+                    self.in_title = False
+                elif tag == 'h1':
+                    self.in_h1 = False
+                    self.h1_found = True
+
+            def handle_data(self, data):
+                if self.in_title:
+                    self.title += data
+                elif self.in_h1:
+                    self.h1 += data
+                    
+        parser = TriolaSEOHTMLParser()
+        parser.feed(html_content)
+        
+        # Clean extracted text
+        title = parser.title.strip()
+        description = parser.description.strip()
+        h1 = parser.h1.strip()
+        
+        return jsonify({
+            "success": True,
+            "title": title,
+            "description": description,
+            "h1": h1
+        })
+        
+    except Exception as e:
+        logging.error(f"Chyba při crawlování URL {full_url}: {e}")
+        return jsonify({
+            "success": False,
+            "error": f"Nepodařilo se stáhnout stránku: {str(e)}"
+        }), 500
+
 @app.route('/api/seo/upload', methods=['POST'])
 def seo_upload():
     """Handles CSV/Excel upload and returns rows to process for SEO."""

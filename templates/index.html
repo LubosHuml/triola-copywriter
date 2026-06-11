@@ -426,7 +426,12 @@
                             <form id="seo-single-form">
                                 <div class="form-group">
                                     <label for="seo-url">URL stránky</label>
-                                    <input type="text" id="seo-url" placeholder="např. /podprsenky-velke-velikosti" required>
+                                    <div style="display: flex; gap: 8px;">
+                                        <input type="text" id="seo-url" placeholder="např. /podprsenky-velke-velikosti" required style="flex: 1;">
+                                        <button type="button" class="btn secondary-btn" id="seo-btn-crawl" style="padding: 10px 16px;" title="Načíst stávající data z live URL">
+                                            <i data-lucide="download"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="form-group">
                                     <label for="seo-kw">Primární klíčové slovo (KW)</label>
