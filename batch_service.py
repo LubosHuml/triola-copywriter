@@ -2,6 +2,7 @@ import os
 import openpyxl
 import re
 import logging
+import csv
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -222,3 +223,229 @@ def write_descriptions_to_excel(file_path, row_num, short_html, long_html):
     
     wb.save(file_path)
     logging.info(f"Zapsány HTML popisky na řádek {row_num} v {file_path}")
+
+def normalize_header(h):
+    if not h:
+        return ""
+    trans = str.maketrans("áéěíóúůýžščřďťň", "aeeouuyzscrdtnn")
+    h = str(h).lower().strip().translate(trans)
+    h = re.sub(r'[\s_\-]+', '', h)
+    return h
+
+def detect_csv_encoding_and_delimiter(file_path):
+    encodings = ['utf-8-sig', 'windows-1250', 'utf-8', 'latin1']
+    for enc in encodings:
+        try:
+            with open(file_path, 'r', encoding=enc) as f:
+                first_line = f.readline()
+                if not first_line:
+                    continue
+                semicolons = first_line.count(';')
+                commas = first_line.count(',')
+                tabs = first_line.count('\t')
+                
+                delimiter = ';'
+                if commas > semicolons and commas > tabs:
+                    delimiter = ','
+                elif tabs > semicolons and tabs > commas:
+                    delimiter = '\t'
+                return enc, delimiter
+        except UnicodeDecodeError:
+            continue
+    return 'utf-8', ';'
+
+def parse_seo_batch(file_path):
+    """
+    Parses CSV or Excel file for SEO Snippet generation.
+    Returns a list of dicts with normalized keys.
+    """
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Soubor {file_path} neexistuje.")
+
+    ext = os.path.splitext(file_path.lower())[1]
+    rows = []
+    headers = []
+
+    if ext == '.csv':
+        enc, delimiter = detect_csv_encoding_and_delimiter(file_path)
+        with open(file_path, 'r', encoding=enc) as f:
+            reader = csv.reader(f, delimiter=delimiter)
+            try:
+                headers = next(reader)
+            except StopIteration:
+                return []
+            
+            headers = [h.strip() for h in headers]
+            
+            for idx, row in enumerate(reader, start=2):
+                if not row or all(cell.strip() == "" for cell in row):
+                    continue
+                rows.append((idx, row))
+    elif ext in ['.xlsx', '.xls']:
+        wb = openpyxl.load_workbook(file_path, data_only=True)
+        ws = wb.active
+        
+        header_row = [ws.cell(row=1, column=c).value for c in range(1, ws.max_column + 1)]
+        headers = [str(h).strip() if h is not None else "" for h in header_row]
+        
+        for idx in range(2, ws.max_row + 1):
+            row_vals = [ws.cell(row=idx, column=c).value for c in range(1, ws.max_column + 1)]
+            row_str_vals = [str(cell).strip() if cell is not None else "" for cell in row_vals]
+            if all(cell == "" for cell in row_str_vals):
+                continue
+            rows.append((idx, row_str_vals))
+    else:
+        raise ValueError(f"Nepodporovaný formát souboru: {ext}")
+
+    mapping = {}
+    normalized_headers = [normalize_header(h) for h in headers]
+    
+    keyword_patterns = ['primarnikw', 'primarniklicoveslovo', 'klicoveslovo', 'klicovyvyraz', 'klicovydotaz', 'dotaz', 'kw']
+    intent_patterns = ['intent', 'zamer', 'typzameru']
+    type_patterns = ['typstranky', 'kategorie', 'pagetype', 'typ']
+    title_patterns = ['soucasnytitle', 'aktualnititle', 'staritle', 'title']
+    desc_patterns = ['soucasnadesc', 'soucasnydescription', 'aktualnidesc', 'description', 'desc', 'popisek']
+    h1_patterns = ['soucasnyh1', 'aktualnih1', 'h1']
+    usp_patterns = ['usp', 'vyhody', 'prednosti', 'argumenty']
+    brand_patterns = ['brand', 'znacka', 'firma']
+    serp_patterns = ['konkurenceserp', 'serpkonkurence', 'konkurence', 'titleskonkurence']
+    url_patterns = ['url', 'adresa', 'link', 'stranka']
+
+    def find_idx(patterns):
+        for pattern in patterns:
+            for i, nh in enumerate(normalized_headers):
+                if nh == pattern:
+                    return i
+        for pattern in patterns:
+            for i, nh in enumerate(normalized_headers):
+                if pattern in nh or nh in pattern:
+                    return i
+        return -1
+
+    mapping['url'] = find_idx(url_patterns)
+    mapping['primarni_kw'] = find_idx(keyword_patterns)
+    mapping['intent'] = find_idx(intent_patterns)
+    mapping['typ_stranky'] = find_idx(type_patterns)
+    mapping['soucasny_title'] = find_idx(title_patterns)
+    mapping['soucasna_desc'] = find_idx(desc_patterns)
+    mapping['soucasny_h1'] = find_idx(h1_patterns)
+    mapping['usp'] = find_idx(usp_patterns)
+    mapping['brand'] = find_idx(brand_patterns)
+    mapping['konkurence_serp'] = find_idx(serp_patterns)
+
+    standard_keys = ['url', 'primarni_kw', 'intent', 'typ_stranky', 'soucasny_title', 'soucasna_desc', 'soucasny_h1', 'usp', 'brand', 'konkurence_serp']
+    for idx, key in enumerate(standard_keys):
+        if mapping[key] == -1 and idx < len(headers):
+            mapping[key] = idx
+
+    parsed_data = []
+    for idx, row in rows:
+        def get_val(key, default=""):
+            col_idx = mapping[key]
+            if col_idx != -1 and col_idx < len(row):
+                return str(row[col_idx]).strip()
+            return default
+
+        parsed_data.append({
+            "row_num": idx,
+            "url": get_val('url'),
+            "primarni_kw": get_val('primarni_kw'),
+            "intent": get_val('intent'),
+            "typ_stranky": get_val('typ_stranky'),
+            "soucasny_title": get_val('soucasny_title'),
+            "soucasna_desc": get_val('soucasna_desc'),
+            "soucasny_h1": get_val('soucasny_h1'),
+            "usp": get_val('usp'),
+            "brand": get_val('brand', 'Triola'),
+            "konkurence_serp": get_val('konkurence_serp')
+        })
+    
+    return parsed_data
+
+def write_seo_to_file(file_path, row_num, seo_data):
+    """
+    Writes the generated SEO snippet data into new columns in the CSV/Excel file.
+    Creates column headers if they don't exist yet.
+    """
+    ext = os.path.splitext(file_path.lower())[1]
+    
+    headers_to_add = [
+        "Navržený Title",
+        "Délka Title",
+        "Navržený Description",
+        "Délka Description",
+        "Navržený H1",
+        "Pattern Break",
+        "Otevřená smyčka",
+        "Rizika"
+    ]
+    
+    vals_to_add = [
+        seo_data.get("title", ""),
+        seo_data.get("title_znaku", len(seo_data.get("title", ""))),
+        seo_data.get("description", ""),
+        seo_data.get("desc_znaku", len(seo_data.get("description", ""))),
+        seo_data.get("h1", ""),
+        seo_data.get("pattern_break", ""),
+        seo_data.get("smycka", ""),
+        seo_data.get("rizika", "")
+    ]
+    
+    if ext == '.csv':
+        enc, delimiter = detect_csv_encoding_and_delimiter(file_path)
+        all_rows = []
+        with open(file_path, 'r', encoding=enc) as f:
+            reader = csv.reader(f, delimiter=delimiter)
+            all_rows = list(reader)
+            
+        if not all_rows:
+            return
+            
+        headers = all_rows[0]
+        col_idxs = {}
+        for h in headers_to_add:
+            if h in headers:
+                col_idxs[h] = headers.index(h)
+            else:
+                headers.append(h)
+                col_idxs[h] = len(headers) - 1
+                
+        for r_idx in range(len(all_rows)):
+            while len(all_rows[r_idx]) < len(headers):
+                all_rows[r_idx].append("")
+                
+        target_idx = row_num - 1
+        if 0 < target_idx < len(all_rows):
+            for h, val in zip(headers_to_add, vals_to_add):
+                col_i = col_idxs[h]
+                all_rows[target_idx][col_i] = str(val)
+                
+        with open(file_path, 'w', encoding=enc, newline='') as f:
+            writer = csv.writer(f, delimiter=delimiter)
+            writer.writerows(all_rows)
+            
+    elif ext in ['.xlsx', '.xls']:
+        wb = openpyxl.load_workbook(file_path)
+        ws = wb.active
+        
+        header_row = [ws.cell(row=1, column=c).value for c in range(1, ws.max_column + 1)]
+        headers = [str(h).strip() if h is not None else "" for h in header_row]
+        
+        col_idxs = {}
+        for h in headers_to_add:
+            if h in headers:
+                col_idxs[h] = headers.index(h) + 1
+            else:
+                new_col = len(headers) + 1
+                ws.cell(row=1, column=new_col, value=h)
+                headers.append(h)
+                col_idxs[h] = new_col
+                
+        for h, val in zip(headers_to_add, vals_to_add):
+            col_i = col_idxs[h]
+            ws.cell(row=row_num, column=col_i, value=val)
+            
+        wb.save(file_path)
+        
+    logging.info(f"Zapsána SEO data na řádek {row_num} v {file_path}")
+

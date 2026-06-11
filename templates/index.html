@@ -36,6 +36,10 @@
                     <i data-lucide="layers"></i>
                     <span>Hromadné generování</span>
                 </button>
+                <button class="nav-item" data-tab="seo">
+                    <i data-lucide="search"></i>
+                    <span>SEO Snippety</span>
+                </button>
                 <button class="nav-item" data-tab="brandbook">
                     <i data-lucide="book-open"></i>
                     <span>Brand Book</span>
@@ -406,6 +410,258 @@
                 </div>
             </section>
 
+            <!-- Tab: SEO Snippety -->
+            <section id="tab-seo" class="tab-pane">
+                <div class="seo-nav-tabs" style="display: flex; gap: 15px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                    <button class="seo-tab-btn active" data-seo-mode="single" style="background: none; border: none; font-size: 16px; font-weight: 600; padding: 5px 10px; cursor: pointer; color: var(--primary); border-bottom: 2px solid var(--primary);">Jednotlivé URL</button>
+                    <button class="seo-tab-btn" data-seo-mode="batch" style="background: none; border: none; font-size: 16px; font-weight: 500; padding: 5px 10px; cursor: pointer; color: var(--text-muted);">Hromadné zpracování</button>
+                </div>
+
+                <!-- 1. Single URL Generator Pane -->
+                <div id="seo-pane-single" class="seo-subpane active">
+                    <div class="generator-grid">
+                        <!-- Left: Form Input Panel -->
+                        <div class="panel config-panel">
+                            <h2>1. Vstupní data pro optimalizaci</h2>
+                            <form id="seo-single-form">
+                                <div class="form-group">
+                                    <label for="seo-url">URL stránky</label>
+                                    <input type="text" id="seo-url" placeholder="např. /podprsenky-velke-velikosti" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="seo-kw">Primární klíčové slovo (KW)</label>
+                                    <input type="text" id="seo-kw" placeholder="např. podprsenky pro velká prsa" required>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="seo-intent">Záměr (Intent)</label>
+                                        <select id="seo-intent">
+                                            <option value="transakční" selected>Transakční (Nákup)</option>
+                                            <option value="informační">Informační (Znalost)</option>
+                                            <option value="srovnávací">Srovnávací (Porovnání)</option>
+                                            <option value="navigační">Navigační (Brand)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="seo-type">Typ stránky</label>
+                                        <select id="seo-type">
+                                            <option value="kategorie" selected>Kategorie</option>
+                                            <option value="produkt">Produkt</option>
+                                            <option value="článek">Článek</option>
+                                            <option value="homepage">Homepage</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="seo-usp">USP (1-3 výhody, konkrétní fakta)</label>
+                                    <textarea id="seo-usp" rows="2" placeholder="např. české šití, košíčky do velikosti J, 47 střihů skladem" required></textarea>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="seo-brand">Brand (pro suffix)</label>
+                                        <input type="text" id="seo-brand" value="Triola">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="seo-model">AI Model</label>
+                                        <select id="seo-model">
+                                            <option value="claude-sonnet-4-6" selected>Claude 3.5 Sonnet</option>
+                                            <option value="gpt-4o">GPT-4o</option>
+                                            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="seo-serp">Konkurence v SERP (1 title na řádek, volitelné)</label>
+                                    <textarea id="seo-serp" rows="3" placeholder="Sem vložte 3-5 titles konkurence z TOP 10..."></textarea>
+                                </div>
+                                <div style="display: flex; gap: 15px; margin-bottom: 15px; margin-top: 5px;">
+                                    <div class="form-group" style="display:flex; align-items:center; gap: 8px;">
+                                        <input type="checkbox" id="seo-single-simulate" style="width:16px; height:16px; cursor:pointer;">
+                                        <label for="seo-single-simulate" style="margin-bottom:0; cursor:pointer;">Simulovat bez API</label>
+                                    </div>
+                                </div>
+                                <div class="form-group" style="margin-top: 10px;">
+                                    <label for="seo-current-title">Současný Title (volitelný)</label>
+                                    <input type="text" id="seo-current-title" placeholder="Stávající title stránky...">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="seo-current-desc">Současná Description (volitelná)</label>
+                                        <input type="text" id="seo-current-desc" placeholder="Stávající description...">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="seo-current-h1">Současná H1 (volitelná)</label>
+                                        <input type="text" id="seo-current-h1" placeholder="Stávající H1...">
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn primary-btn" style="width: 100%; margin-top: 15px;">
+                                    <i data-lucide="sparkles"></i>
+                                    <span>Generovat SEO Snippet</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Right: Results Panel -->
+                        <div class="panel output-panel" style="position: relative;">
+                            <h2>2. Kalibrovaný výstup</h2>
+                            
+                            <div id="seo-single-result" style="display: none;">
+                                <div class="seo-output-card" style="margin-bottom: 20px; padding: 15px; border: 1px solid var(--border-color); border-radius: 8px; background-color: var(--bg-light);">
+                                    <div style="font-size: 13px; color: #1a0dab; text-decoration: underline; margin-bottom: 4px;" id="seo-result-google-url">https://www.triola.cz/podprsenky-velke-velikosti</div>
+                                    <h3 style="font-size: 18px; color: #1a0dab; margin: 0 0 6px 0; font-family: 'Inter', sans-serif; font-weight: normal; line-height: 1.2;" id="seo-result-google-title">Název stránky v SERP</h3>
+                                    <p style="font-size: 14px; color: #4d5156; margin: 0; line-height: 1.4; font-family: 'Inter', sans-serif;" id="seo-result-google-desc">Meta popisek ve vyhledávači...</p>
+                                </div>
+
+                                <div class="seo-field-group" style="margin-bottom: 15px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                        <label style="font-weight: 600; font-size: 14px;">Optimalizovaný Title</label>
+                                        <span id="seo-counter-title" class="char-counter">0 / 60 znaků</span>
+                                    </div>
+                                    <div style="display: flex; gap: 10px;">
+                                        <input type="text" id="seo-result-title" readonly style="flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;">
+                                        <button type="button" class="btn secondary-btn compact-btn btn-copy-seo" data-target="seo-result-title" style="padding: 0 10px;"><i data-lucide="copy" style="width:16px;"></i></button>
+                                    </div>
+                                </div>
+
+                                <div class="seo-field-group" style="margin-bottom: 15px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                        <label style="font-weight: 600; font-size: 14px;">Optimalizovaný Description</label>
+                                        <span id="seo-counter-desc" class="char-counter">0 / 155 znaků</span>
+                                    </div>
+                                    <div style="display: flex; gap: 10px;">
+                                        <textarea id="seo-result-desc" readonly rows="2" style="flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; font-family: inherit; resize: none;"></textarea>
+                                        <button type="button" class="btn secondary-btn compact-btn btn-copy-seo" data-target="seo-result-desc" style="padding: 0 10px;"><i data-lucide="copy" style="width:16px;"></i></button>
+                                    </div>
+                                </div>
+
+                                <div class="seo-field-group" style="margin-bottom: 20px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                        <label style="font-weight: 600; font-size: 14px;">Optimalizovaný nadpis H1</label>
+                                        <span id="seo-counter-h1" class="char-counter">0 / 70 znaků</span>
+                                    </div>
+                                    <div style="display: flex; gap: 10px;">
+                                        <input type="text" id="seo-result-h1" readonly style="flex: 1; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px;">
+                                        <button type="button" class="btn secondary-btn compact-btn btn-copy-seo" data-target="seo-result-h1" style="padding: 0 10px;"><i data-lucide="copy" style="width:16px;"></i></button>
+                                    </div>
+                                </div>
+
+                                <div style="border-top: 1px solid var(--border-color); padding-top: 15px;">
+                                    <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;"><i data-lucide="zap" style="width:16px; height:16px; display:inline-block; vertical-align:text-bottom; margin-right:4px;"></i> Pattern Break (Porušení vzoru)</h4>
+                                    <p id="seo-result-break" style="font-size: 13px; color: var(--text-dark); margin: 0 0 15px 0; line-height: 1.4; background: rgba(var(--primary-rgb), 0.05); padding: 8px; border-radius: 4px;"></p>
+                                    
+                                    <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;"><i data-lucide="help-circle" style="width:16px; height:16px; display:inline-block; vertical-align:text-bottom; margin-right:4px;"></i> Informační smyčka v Description</h4>
+                                    <p id="seo-result-smycka" style="font-size: 13px; color: var(--text-dark); margin: 0 0 15px 0; line-height: 1.4; background: rgba(var(--primary-rgb), 0.05); padding: 8px; border-radius: 4px;"></p>
+                                    
+                                    <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;"><i data-lucide="alert-triangle" style="width:16px; height:16px; display:inline-block; vertical-align:text-bottom; margin-right:4px;"></i> Rizika / Upozornění</h4>
+                                    <p id="seo-result-rizika" style="font-size: 13px; color: var(--text-dark); margin: 0; line-height: 1.4; background: #fff8e1; border: 1px solid #ffe0b2; padding: 8px; border-radius: 4px;"></p>
+                                </div>
+                            </div>
+                            
+                            <div id="seo-single-empty" class="empty-state">
+                                <i data-lucide="message-square-dashed"></i>
+                                <p>Zde se zobrazí vygenerované optimalizované meta tagy.</p>
+                                <span>Vyplňte formulář v levém sloupci a klikněte na "Generovat SEO Snippet".</span>
+                            </div>
+
+                            <!-- Loader Overlay -->
+                            <div id="seo-single-loader" class="loader-overlay" style="display: none;">
+                                <div class="spinner-container">
+                                    <div class="double-bounce"></div>
+                                    <p>Senior SEO Copywriter kalibruje snippety...</p>
+                                    <span class="loader-warning">Zpracování podle psychologie pozornosti...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Batch URL Pane -->
+                <div id="seo-pane-batch" class="seo-subpane" style="display: none;">
+                    <div class="batch-grid">
+                        <div class="panel">
+                            <h2>1. Nahrání a nastavení souboru pro hromadné SEO</h2>
+                            <p class="section-desc">Nahrajte CSV nebo Excel (.xlsx, .xls) soubor. Tabulka by měla obsahovat sloupce jako <code>url</code>, <code>primarni_kw</code>, <code>intent</code>, <code>typ_stranky</code>, <code>usp</code> atd. Pokud nejsou nalezeny přesné názvy, použijí se sloupce v pořadí.</p>
+                            
+                            <div class="upload-area" id="seo-batch-upload-area">
+                                <input type="file" id="seo-batch-file-input" accept=".xlsx, .xls, .csv" style="display: none;">
+                                <i data-lucide="file-spreadsheet" class="upload-icon"></i>
+                                <p class="upload-text">Přetáhněte sem soubor CSV / Excel nebo <span class="upload-link" id="seo-batch-upload-link">vyberte z disku</span></p>
+                                <p class="upload-limits">Podporované formáty: .xlsx, .xls, .csv</p>
+                            </div>
+
+                            <!-- Selected File Summary -->
+                            <div id="seo-batch-file-summary" class="batch-file-summary" style="display: none;">
+                                <div class="file-info">
+                                    <i data-lucide="file-check" class="file-icon"></i>
+                                    <div>
+                                        <h4 id="seo-batch-filename">import_seo.csv</h4>
+                                        <span class="file-size" id="seo-batch-rows-count">Celkem 0 stránek připraveno k optimalizaci</span>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn danger-btn text-btn" id="seo-batch-remove-file-btn">Odebrat</button>
+                            </div>
+                            
+                            <div class="batch-settings-row" style="margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
+                                <div class="form-group" style="flex: 1; min-width: 200px;">
+                                    <label for="seo-batch-model-select">Model AI</label>
+                                    <select id="seo-batch-model-select">
+                                        <option value="claude-sonnet-4-6">Claude 3.5 Sonnet (Doporučeno)</option>
+                                        <option value="gpt-4o">GPT-4o (Rychlý)</option>
+                                        <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="display:flex; align-items:center; gap: 10px; margin-top:28px; min-width: 200px;">
+                                    <input type="checkbox" id="seo-batch-simulate-checkbox" style="width:18px; height:18px; cursor:pointer;">
+                                    <label for="seo-batch-simulate-checkbox" style="margin-bottom:0; cursor:pointer; font-weight: 500;">Simulovat bez API</label>
+                                </div>
+                            </div>
+                            
+                            <div class="batch-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                                <button type="button" class="btn primary-btn" id="seo-batch-start-btn" disabled>
+                                    <i data-lucide="play"></i>
+                                    <span>Spustit optimalizaci meta tagů</span>
+                                </button>
+                                <button type="button" class="btn success-btn" id="seo-batch-download-btn" disabled>
+                                    <i data-lucide="download"></i>
+                                    <span>Stáhnout hotový soubor</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Batch Progress Panel -->
+                        <div class="panel progress-panel" id="seo-batch-progress-panel" style="display: none; margin-top: 20px;">
+                            <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <h2 style="margin: 0;">2. Stav zpracování</h2>
+                                <span class="batch-status-text" id="seo-batch-progress-text" style="font-weight: 600; color: var(--primary);">Optimalizováno 0 z 0</span>
+                            </div>
+                            
+                            <div class="progress-bar-container" style="background-color: var(--border-color); height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 20px;">
+                                <div class="progress-bar-fill" id="seo-batch-progress-bar" style="width: 0%; background-color: var(--primary); height: 100%; transition: width 0.3s ease;"></div>
+                            </div>
+                            
+                            <div class="batch-table-container" style="max-height: 400px; overflow-y: auto;">
+                                <table class="batch-table" style="width: 100%; border-collapse: collapse; text-align: left;">
+                                    <thead>
+                                        <tr style="border-bottom: 2px solid var(--border-color);">
+                                            <th style="padding: 10px;">Řádek</th>
+                                            <th style="padding: 10px;">URL</th>
+                                            <th style="padding: 10px;">Klíčové slovo</th>
+                                            <th style="padding: 10px;">Záměr</th>
+                                            <th style="padding: 10px;">Status</th>
+                                            <th style="padding: 10px; text-align: right;">Akce</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="seo-batch-table-body">
+                                        <!-- Dynamic rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Tab 3: Brand Book -->
             <section id="tab-brandbook" class="tab-pane">
                 <div class="brandbook-grid">
@@ -599,6 +855,41 @@
                     <h3 style="margin-bottom: 10px; color: var(--primary);">Dlouhý popis (HTML kód pro ERP)</h3>
                     <div style="background-color: var(--bg-light); padding: 10px; border-radius: 4px; font-family: monospace; font-size: 13px; max-height: 180px; overflow-y: auto; border: 1px solid var(--border-color); white-space: pre-wrap; margin-bottom: 10px;" id="batch-preview-long-code"></div>
                     <div style="border: 1px dashed var(--border-color); padding: 15px; border-radius: 4px;" id="batch-preview-long-render"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEO Batch Preview Modal -->
+    <div id="seo-batch-preview-modal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 800px; max-height: 85vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h2>Detail optimalizace pro URL</h2>
+                <button type="button" class="close-modal-btn" id="close-seo-batch-preview-btn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="batch-preview-body" style="padding: 20px 0;">
+                <div class="preview-section" style="margin-bottom: 20px;">
+                    <h3 style="margin-bottom: 10px; color: var(--primary);">Navržený Title</h3>
+                    <div style="background-color: var(--bg-light); padding: 15px; border-radius: 4px; border: 1px solid var(--border-color); font-weight: 500;" id="seo-preview-title"></div>
+                </div>
+                <div class="preview-section" style="margin-bottom: 20px;">
+                    <h3 style="margin-bottom: 10px; color: var(--primary);">Navržený Description</h3>
+                    <div style="background-color: var(--bg-light); padding: 15px; border-radius: 4px; border: 1px solid var(--border-color);" id="seo-preview-desc"></div>
+                </div>
+                <div class="preview-section" style="margin-bottom: 20px;">
+                    <h3 style="margin-bottom: 10px; color: var(--primary);">Navržený H1</h3>
+                    <div style="background-color: var(--bg-light); padding: 15px; border-radius: 4px; border: 1px solid var(--border-color); font-weight: 500;" id="seo-preview-h1"></div>
+                </div>
+                <div class="preview-section" style="margin-bottom: 20px;">
+                    <h3 style="margin-bottom: 10px; color: var(--primary);">Psychologický vzorec</h3>
+                    <p style="margin: 5px 0;"><strong>Pattern Break:</strong> <span id="seo-preview-break"></span></p>
+                    <p style="margin: 5px 0;"><strong>Otevřená smyčka:</strong> <span id="seo-preview-smycka"></span></p>
+                </div>
+                <div class="preview-section">
+                    <h3 style="margin-bottom: 10px; color: var(--primary);">Rizika</h3>
+                    <div style="background-color: #fff8e1; border: 1px solid #ffe0b2; padding: 15px; border-radius: 4px;" id="seo-preview-rizika"></div>
                 </div>
             </div>
         </div>

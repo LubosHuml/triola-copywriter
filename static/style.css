@@ -1529,3 +1529,50 @@ textarea:focus {
     color: var(--text-muted);
 }
 
+/* SEO Snippety Tab & Pane styling */
+.seo-tab-btn {
+    transition: all 0.2s ease;
+}
+.seo-tab-btn:hover {
+    color: var(--primary) !important;
+}
+.seo-tab-btn.active {
+    color: var(--primary) !important;
+    border-bottom: 2px solid var(--primary) !important;
+}
+.seo-subpane {
+    display: none;
+}
+.seo-subpane.active {
+    display: block;
+}
+.char-counter {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: color 0.2s ease;
+}
+.char-counter.optimal {
+    color: var(--success) !important;
+    font-weight: 600;
+}
+.char-counter.warning {
+    color: var(--warning) !important;
+    font-weight: 600;
+}
+.char-counter.exceeded {
+    color: var(--danger) !important;
+    font-weight: 600;
+}
+.compact-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.compact-btn:hover {
+    background-color: var(--primary-light);
+    color: var(--primary);
+    border-color: var(--primary);
+}

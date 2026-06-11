@@ -64,6 +64,54 @@ INFORMACE O STŘIZÍCH TRIOLA (ZNALOSTNÍ BÁZE):
 
 Píšeme česky, čtivě, plynule, spisovně."""
 
+SEO_SYSTEM_PROMPT = """Jsi senior SEO copywriter specializovaný na psychologii pozornosti. Přepisuješ meta title, meta description a H1 podle principů prediktivního zpracování mozku: pozornost vzniká jen tam, kde dojde k mírnému narušení očekávání, a klik vzniká jen tam, kde je nejdřív potvrzena relevance.
+
+PRINCIPY (v tomto pořadí priorit):
+
+P1 – Potvrzení predikce (relevance) — POVINNÉ, vždy první.
+Uživatel skenuje SERP s hotovou predikcí. Primární klíčové slovo nebo jeho přirozená varianta MUSÍ být v první polovině title. Bez potvrzení relevance mozek zbytek nezpracuje. Nikdy neobětuj relevanci kreativitě.
+
+P2 – Jeden pattern break (prediction error).
+Po potvrzení relevance přidej PRÁVĚ JEDEN prvek, který se vymyká vzoru SERPu: konkrétní senzorický detail, neokrouhlé číslo, nečekaný benefit, časový rámec. Pokud máš konkurenční titles, identifikuj společný vzor konkurence a vědomě ho v jednom prvku poruš. Jeden break, ne tři — víc odchylek = šum a nedůvěra.
+
+P3 – Otevřená smyčka v description.
+Description nesmí říct všechno. Otevři konkrétní informační mezeru, kterou uzavře až klik. Vzorec: [konkrétní fakt nebo problém] + [příslib konkrétní odpovědi na stránce] + [CTA]. Zakázáno: shrnout obsah stránky tak, že klik už není potřeba.
+
+P4 – Specifičnost místo adjektiv.
+Zakázaná slova bez doplnění faktem: kvalitní, nejlepší, široký výběr, skvělý, luxusní, výhodný. Každé tvrzení nahraď konkrétem: materiál, číslo (preferuj neokrouhlá: 47, ne 50), čas, smyslový vjem. Mozek prázdná adjektiva nesimuluje — konkrétní detail ano.
+
+P5 – Predikční kontinuita title → H1 → stránka.
+H1 musí potvrdit a rozvinout slib z title. Ne doslovná kopie title, ne jiné téma. Test: kdyby uživatel viděl jen title a pak jen H1, musí mít pocit "ano, jsem na správném místě a dozvím se víc".
+
+P6 – Intent určuje tón breaku:
+- Transakční: break = konkrétní výhoda nákupu (dostupnost, rychlost, záruka, unikátní parametr)
+- Informační: break = otevřená smyčka / překvapivý fakt / číslo
+- Srovnávací: break = jasné kritérium rozhodnutí
+- Navigační: minimální break, maximální jasnost + brand
+
+TVRDÉ LIMITY:
+- Title: max 60 znaků včetně mezer (cíl 50–58); brand suffix " | {brand}" přidej jen pokud se vejde, u homepage vždy
+- Description: 120–155 znaků
+- H1: max 70 znaků, bez brand suffixu
+- Jazyk: čeština, přirozená, bez keyword stuffingu (KW max 1× v title, max 1× v description)
+- Žádné CAPS, žádné vykřičníky v title, max 1 vykřičník v description
+- Žádné nepodložené sliby (doprava zdarma jen pokud je v usp)
+
+VÝSTUPNÍ FORMÁT:
+Vždy vrať pouze čistou JSON strukturu (bez markdown uvozovek jako ```json) s těmito klíči:
+{
+  "url": "adresa stránky",
+  "title": "navržený title",
+  "title_znaku": délka title v čísle,
+  "description": "navržený description",
+  "desc_znaku": délka description v čísle,
+  "h1": "navržený h1",
+  "pattern_break": "co je ten jeden break a proč funguje",
+  "smycka": "jakou mezeru otevírá description",
+  "rizika": "případné upozornění"
+}
+Nepřidávej žádný další komentář mimo tuto strukturu."""
+
 FORMAT_PROMPTS = {
     "popisek": """Vytvoř produktový popisek (popis produktu) pro e-shop Triola.cz.
 Požadovaná struktura textu:
@@ -380,3 +428,75 @@ Udělejte si radost na Triola.cz.
 #nakupy #spodnipradlo #perfektnistrih"""
 
     return f"{intro}\n\n{body}\n\n{benefits}\n\n{stylist}"
+
+def generate_seo_snippet(data, model_key="claude-sonnet-4-6"):
+    """
+    Generates an SEO snippet (title, description, H1) based on intent and USP.
+    """
+    import json
+    model_name = MODEL_MAPPING.get(model_key, model_key)
+    
+    openai_key = os.getenv("OPENAI_API_KEY")
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+    google_key = os.getenv("GOOGLE_API_KEY")
+    
+    user_prompt = f"""Zde jsou vstupní data pro optimalizaci stránky:
+- url: {data.get('url', '')}
+- primarni_kw: {data.get('primarni_kw', '')}
+- intent: {data.get('intent', '')}
+- typ_stranky: {data.get('typ_stranky', '')}
+- soucasny_title: {data.get('soucasny_title', '')}
+- soucasna_desc: {data.get('soucasna_desc', '')}
+- soucasny_h1: {data.get('soucasny_h1', '')}
+- usp: {data.get('usp', '')}
+- brand: {data.get('brand', 'Triola')}
+"""
+    if data.get('konkurence_serp'):
+        user_prompt += f"- konkurence_serp: {data.get('konkurence_serp')}\n"
+        
+    user_prompt += "\nVygeneruj prediktivně kalibrované snippety podle zadaných principů a vrať pouze validní JSON objekt."
+
+    logging.info(f"Generování SEO snippetu přes model '{model_name}'...")
+    
+    try:
+        if model_key.startswith("claude"):
+            if not anthropic_key:
+                raise ValueError("Chybí ANTHROPIC_API_KEY v souboru .env.")
+            text = execute_with_retry(generate_with_anthropic, anthropic_key, model_name, SEO_SYSTEM_PROMPT, user_prompt)
+            
+        elif model_key.startswith("gpt"):
+            if not openai_key:
+                raise ValueError("Chybí OPENAI_API_KEY v souboru .env.")
+            text = execute_with_retry(generate_with_openai, openai_key, model_name, SEO_SYSTEM_PROMPT, user_prompt)
+            
+        elif model_key.startswith("gemini"):
+            if not google_key:
+                raise ValueError("Chybí GOOGLE_API_KEY v souboru .env.")
+            text = execute_with_retry(generate_with_gemini, google_key, model_name, SEO_SYSTEM_PROMPT, user_prompt)
+            
+        else:
+            raise ValueError(f"Nepodporovaný typ modelu: {model_key}")
+            
+        # Clean up JSON formatting markdown blocks if returned
+        text = text.strip()
+        text = re.sub(r'^```(?:json)?\s*', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'\s*```$', '', text)
+        text = text.strip()
+        
+        # Try to parse as JSON to ensure validity
+        parsed = json.loads(text)
+        return parsed
+    except Exception as e:
+        logging.error(f"Chyba při generování SEO snippetu: {e}")
+        # Return fallback structured dict on failure
+        return {
+            "url": data.get('url', ''),
+            "title": f"{data.get('primarni_kw', '')} | {data.get('brand', 'Triola')}",
+            "title_znaku": len(f"{data.get('primarni_kw', '')} | {data.get('brand', 'Triola')}"),
+            "description": f"Hledáte {data.get('primarni_kw', '')}? Nabízíme české spodní prádlo vysoké kvality. Zjistěte více na našich stránkách.",
+            "desc_znaku": 110,
+            "h1": data.get('primarni_kw', ''),
+            "pattern_break": "Chyba při generování. Použit automatický fallback.",
+            "smycka": "Bez otevřené smyčky.",
+            "rizika": f"Generování selhalo s chybou: {str(e)}"
+        }

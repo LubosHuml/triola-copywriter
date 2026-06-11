@@ -138,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
             generator: 'Generátor textů',
             catalog: 'Knihovna modelů Triola',
             batch: 'Hromadné generování z Excelu',
+            seo: 'Prediktivně kalibrované SEO snippety',
             brandbook: 'Triola Brand Book & Stylistika',
             settings: 'Nastavení systému & API'
         };
@@ -1165,6 +1166,526 @@ document.addEventListener('DOMContentLoaded', () => {
         batchDownloadBtn.addEventListener('click', () => {
             if (!batchFilename) return;
             window.location.href = `/api/batch/download/${batchFilename}`;
+        });
+    }
+
+    // ----------------------------------------------------
+    // TAB 6: SEO SNIPPETS LOGIC
+    // ----------------------------------------------------
+    // Inner subpane switching
+    const seoTabBtns = document.querySelectorAll('.seo-tab-btn');
+    const seoSubpanes = document.querySelectorAll('.seo-subpane');
+
+    seoTabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const mode = btn.getAttribute('data-seo-mode');
+            
+            // Toggle buttons
+            seoTabBtns.forEach(b => {
+                if (b.getAttribute('data-seo-mode') === mode) {
+                    b.classList.add('active');
+                    b.style.color = 'var(--primary)';
+                    b.style.borderBottom = '2px solid var(--primary)';
+                } else {
+                    b.classList.remove('active');
+                    b.style.color = 'var(--text-muted)';
+                    b.style.borderBottom = 'none';
+                }
+            });
+
+            // Toggle panes
+            seoSubpanes.forEach(pane => {
+                if (pane.id === `seo-pane-${mode}`) {
+                    pane.classList.add('active');
+                } else {
+                    pane.classList.remove('active');
+                }
+            });
+        });
+    });
+
+    // Single Form Submit
+    const seoSingleForm = document.getElementById('seo-single-form');
+    const seoSingleResult = document.getElementById('seo-single-result');
+    const seoSingleEmpty = document.getElementById('seo-single-empty');
+    const seoSingleLoader = document.getElementById('seo-single-loader');
+
+    const seoResultGoogleUrl = document.getElementById('seo-result-google-url');
+    const seoResultGoogleTitle = document.getElementById('seo-result-google-title');
+    const seoResultGoogleDesc = document.getElementById('seo-result-google-desc');
+
+    const seoResultTitle = document.getElementById('seo-result-title');
+    const seoResultDesc = document.getElementById('seo-result-desc');
+    const seoResultH1 = document.getElementById('seo-result-h1');
+    const seoResultBreak = document.getElementById('seo-result-break');
+    const seoResultSmycka = document.getElementById('seo-result-smycka');
+    const seoResultRizika = document.getElementById('seo-result-rizika');
+
+    const seoCounterTitle = document.getElementById('seo-counter-title');
+    const seoCounterDesc = document.getElementById('seo-counter-desc');
+    const seoCounterH1 = document.getElementById('seo-counter-h1');
+
+    function updateSeoCounters(title, desc, h1) {
+        updateSeoCounter(seoCounterTitle, title.length, 'title');
+        updateSeoCounter(seoCounterDesc, desc.length, 'desc');
+        updateSeoCounter(seoCounterH1, h1.length, 'h1');
+    }
+
+    function updateSeoCounter(element, count, type) {
+        element.textContent = `${count} znaků`;
+        element.className = 'char-counter';
+        if (type === 'title') {
+            if (count >= 50 && count <= 58) {
+                element.classList.add('optimal');
+            } else if (count <= 60) {
+                element.classList.add('warning');
+            } else {
+                element.classList.add('exceeded');
+            }
+        } else if (type === 'desc') {
+            if (count >= 120 && count <= 155) {
+                element.classList.add('optimal');
+            } else {
+                element.classList.add('exceeded');
+            }
+        } else if (type === 'h1') {
+            if (count <= 70) {
+                element.classList.add('optimal');
+            } else {
+                element.classList.add('exceeded');
+            }
+        }
+    }
+
+    seoSingleForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const urlVal = document.getElementById('seo-url').value.trim();
+        const kwVal = document.getElementById('seo-kw').value.trim();
+        const intentVal = document.getElementById('seo-intent').value;
+        const typeVal = document.getElementById('seo-type').value;
+        const uspVal = document.getElementById('seo-usp').value.trim();
+        const brandVal = document.getElementById('seo-brand').value.trim();
+        const serpVal = document.getElementById('seo-serp').value.trim();
+        const modelVal = document.getElementById('seo-model').value;
+        const simulateVal = document.getElementById('seo-single-simulate').checked;
+
+        const currentTitle = document.getElementById('seo-current-title').value.trim();
+        const currentDesc = document.getElementById('seo-current-desc').value.trim();
+        const currentH1 = document.getElementById('seo-current-h1').value.trim();
+
+        seoSingleLoader.style.display = 'flex';
+
+        if (simulateVal) {
+            // Client-side simulation
+            setTimeout(() => {
+                const mockResult = {
+                    url: urlVal,
+                    title: `${kwVal.charAt(0).toUpperCase() + kwVal.slice(1)} do košíčku J - 47 střihů | ${brandVal}`,
+                    title_znaku: (`${kwVal.charAt(0).toUpperCase() + kwVal.slice(1)} do košíčku J - 47 střihů | ${brandVal}`).length,
+                    description: `Hledáte ${kwVal}? 47 česky šitých střihů prádla Triola do košíčku J – zjistěte v našem e-shopu, který z nich vám padne bez zarývání.`,
+                    desc_znaku: `Hledáte ${kwVal}? 47 česky šitých střihů prádla Triola do košíčku J – zjistěte v našem e-shopu, který z nich vám padne bez zarývání.`.length,
+                    h1: `${kwVal.charAt(0).toUpperCase() + kwVal.slice(1)}: 47 českých střihů`,
+                    pattern_break: "Číslo 47 + konkrétní limit košíčku J porušuje běžný vzor.",
+                    smycka: "Otázka 'který vám padne bez zarývání' otevírá informační mezeru.",
+                    rizika: "Simulovaná data (lokální test)."
+                };
+                displaySeoSingleResult(mockResult);
+                seoSingleLoader.style.display = 'none';
+            }, 600);
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/seo/generate-single', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    url: urlVal,
+                    primarni_kw: kwVal,
+                    intent: intentVal,
+                    typ_stranky: typeVal,
+                    usp: uspVal,
+                    brand: brandVal,
+                    konkurence_serp: serpVal,
+                    soucasny_title: currentTitle,
+                    soucasna_desc: currentDesc,
+                    soucasny_h1: currentH1,
+                    model_key: modelVal
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                displaySeoSingleResult(data.result);
+            } else {
+                alert(`Chyba při generování: ${data.error}`);
+            }
+        } catch (err) {
+            alert(`Chyba připojení k serveru: ${err.message}`);
+        } finally {
+            seoSingleLoader.style.display = 'none';
+        }
+    });
+
+    function displaySeoSingleResult(result) {
+        seoResultGoogleUrl.textContent = `https://www.triola.cz${result.url.startsWith('/') ? '' : '/'}${result.url}`;
+        seoResultGoogleTitle.textContent = result.title;
+        seoResultGoogleDesc.textContent = result.description;
+
+        seoResultTitle.value = result.title;
+        seoResultDesc.value = result.description;
+        seoResultH1.value = result.h1;
+
+        seoResultBreak.textContent = result.pattern_break || 'Není k dispozici.';
+        seoResultSmycka.textContent = result.smycka || 'Není k dispozici.';
+        seoResultRizika.textContent = result.rizika || 'Žádná detekovaná rizika.';
+
+        updateSeoCounters(result.title, result.description, result.h1);
+
+        seoSingleEmpty.style.display = 'none';
+        seoSingleResult.style.display = 'block';
+    }
+
+    // Copy SEO Results
+    document.querySelectorAll('.btn-copy-seo').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.getAttribute('data-target');
+            const inputEl = document.getElementById(targetId);
+            if (!inputEl) return;
+
+            navigator.clipboard.writeText(inputEl.value).then(() => {
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="check" style="color: var(--success); width: 16px;"></i>';
+                lucide.createIcons();
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    lucide.createIcons();
+                }, 1500);
+            });
+        });
+    });
+
+    // SEO Batch Elements
+    const seoBatchUploadArea = document.getElementById('seo-batch-upload-area');
+    const seoBatchFileInput = document.getElementById('seo-batch-file-input');
+    const seoBatchUploadLink = document.getElementById('seo-batch-upload-link');
+    const seoBatchFileSummary = document.getElementById('seo-batch-file-summary');
+    const seoBatchFilenameEl = document.getElementById('seo-batch-filename');
+    const seoBatchRowsCountEl = document.getElementById('seo-batch-rows-count');
+    const seoBatchRemoveFileBtn = document.getElementById('seo-batch-remove-file-btn');
+    const seoBatchModelSelect = document.getElementById('seo-batch-model-select');
+    const seoBatchSimulateCheckbox = document.getElementById('seo-batch-simulate-checkbox');
+    const seoBatchStartBtn = document.getElementById('seo-batch-start-btn');
+    const seoBatchDownloadBtn = document.getElementById('seo-batch-download-btn');
+    const seoBatchProgressPanel = document.getElementById('seo-batch-progress-panel');
+    const seoBatchProgressText = document.getElementById('seo-batch-progress-text');
+    const seoBatchProgressBar = document.getElementById('seo-batch-progress-bar');
+    const seoBatchTableBody = document.getElementById('seo-batch-table-body');
+
+    const seoBatchPreviewModal = document.getElementById('seo-batch-preview-modal');
+    const closeSeoBatchPreviewBtn = document.getElementById('close-seo-batch-preview-btn');
+
+    let seoBatchFilename = '';
+    let seoBatchRows = [];
+    let seoBatchIsProcessing = false;
+    let seoBatchCancelRequested = false;
+
+    if (seoBatchUploadLink) {
+        seoBatchUploadLink.addEventListener('click', (e) => {
+            e.stopPropagation();
+            seoBatchFileInput.click();
+        });
+    }
+
+    if (seoBatchUploadArea) {
+        seoBatchUploadArea.addEventListener('click', (e) => {
+            if (e.target !== seoBatchUploadLink) {
+                seoBatchFileInput.click();
+            }
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            seoBatchUploadArea.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                seoBatchUploadArea.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            seoBatchUploadArea.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                seoBatchUploadArea.classList.remove('dragover');
+            }, false);
+        });
+
+        seoBatchUploadArea.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length > 0) {
+                handleSeoBatchUpload(files[0]);
+            }
+        });
+    }
+
+    if (seoBatchFileInput) {
+        seoBatchFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleSeoBatchUpload(e.target.files[0]);
+            }
+        });
+    }
+
+    if (seoBatchRemoveFileBtn) {
+        seoBatchRemoveFileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            resetSeoBatchState();
+        });
+    }
+
+    function resetSeoBatchState() {
+        if (seoBatchFileInput) seoBatchFileInput.value = '';
+        seoBatchFilename = '';
+        seoBatchRows = [];
+        seoBatchIsProcessing = false;
+        seoBatchCancelRequested = false;
+
+        if (seoBatchFileSummary) seoBatchFileSummary.style.display = 'none';
+        if (seoBatchUploadArea) seoBatchUploadArea.style.display = 'block';
+        if (seoBatchStartBtn) {
+            seoBatchStartBtn.disabled = true;
+            seoBatchStartBtn.innerHTML = '<i data-lucide="play"></i> <span>Spustit optimalizaci meta tagů</span>';
+            seoBatchStartBtn.className = 'btn primary-btn';
+        }
+        if (seoBatchDownloadBtn) seoBatchDownloadBtn.disabled = true;
+        if (seoBatchProgressPanel) seoBatchProgressPanel.style.display = 'none';
+        if (seoBatchTableBody) seoBatchTableBody.innerHTML = '';
+        if (seoBatchProgressBar) seoBatchProgressBar.style.width = '0%';
+        if (seoBatchProgressText) seoBatchProgressText.textContent = 'Optimalizováno 0 z 0';
+        lucide.createIcons();
+    }
+
+    async function handleSeoBatchUpload(file) {
+        if (!file.name.toLowerCase().endsWith('.xlsx') && !file.name.toLowerCase().endsWith('.xls') && !file.name.toLowerCase().endsWith('.csv')) {
+            alert('Nahrajte prosím soubor typu CSV nebo Excel (.xlsx, .xls).');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        if (seoBatchUploadArea) seoBatchUploadArea.style.display = 'none';
+        if (seoBatchFileSummary) seoBatchFileSummary.style.display = 'flex';
+        if (seoBatchFilenameEl) seoBatchFilenameEl.textContent = 'Odesílám a analyzuji soubor...';
+        if (seoBatchRowsCountEl) seoBatchRowsCountEl.textContent = '';
+        if (seoBatchRemoveFileBtn) seoBatchRemoveFileBtn.disabled = true;
+
+        try {
+            const response = await fetch('/api/seo/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                seoBatchFilename = data.filename;
+                seoBatchRows = data.rows;
+
+                if (seoBatchFilenameEl) seoBatchFilenameEl.textContent = file.name;
+                if (seoBatchRowsCountEl) seoBatchRowsCountEl.textContent = `Celkem ${data.total_rows} stránek nalezeno k optimalizaci`;
+
+                if (seoBatchStartBtn) seoBatchStartBtn.disabled = false;
+                if (seoBatchRemoveFileBtn) seoBatchRemoveFileBtn.disabled = false;
+
+                renderSeoBatchTableRows(seoBatchRows);
+                if (seoBatchProgressPanel) seoBatchProgressPanel.style.display = 'block';
+                if (seoBatchProgressText) seoBatchProgressText.textContent = `Připraveno: 0 z ${seoBatchRows.length}`;
+                if (seoBatchProgressBar) seoBatchProgressBar.style.width = '0%';
+            } else {
+                alert(`Chyba při zpracování souboru: ${data.error}`);
+                resetSeoBatchState();
+            }
+        } catch (e) {
+            alert(`Chyba připojení k serveru: ${e.message}`);
+            resetSeoBatchState();
+        }
+    }
+
+    function renderSeoBatchTableRows(rows) {
+        if (!seoBatchTableBody) return;
+        seoBatchTableBody.innerHTML = '';
+        rows.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.id = `seo-batch-row-${row.row_num}`;
+            tr.style.borderBottom = '1px solid var(--border-color)';
+            tr.innerHTML = `
+                <td style="padding: 10px; font-weight: 600;">${row.row_num}</td>
+                <td style="padding: 10px; word-break: break-all;">${row.url}</td>
+                <td style="padding: 10px; font-weight: bold; color: var(--primary);">${row.primarni_kw}</td>
+                <td style="padding: 10px;">${row.intent}</td>
+                <td style="padding: 10px;">
+                    <span class="batch-status-badge pending" id="seo-row-badge-${row.row_num}">Čeká</span>
+                </td>
+                <td style="padding: 10px; text-align: right;">
+                    <button type="button" class="batch-preview-btn" id="seo-preview-btn-${row.row_num}" disabled>
+                        <i data-lucide="eye" style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-right:4px;"></i>
+                        <span>Detail</span>
+                    </button>
+                </td>
+            `;
+            seoBatchTableBody.appendChild(tr);
+        });
+        lucide.createIcons();
+    }
+
+    if (seoBatchStartBtn) {
+        seoBatchStartBtn.addEventListener('click', async () => {
+            if (seoBatchIsProcessing) {
+                seoBatchCancelRequested = true;
+                seoBatchStartBtn.innerHTML = '<i data-lucide="square"></i> <span>Ruším...</span>';
+                seoBatchStartBtn.disabled = true;
+                lucide.createIcons();
+                return;
+            }
+
+            seoBatchIsProcessing = true;
+            seoBatchCancelRequested = false;
+            seoBatchStartBtn.innerHTML = '<i data-lucide="square"></i> <span>Zrušit generování</span>';
+            seoBatchStartBtn.className = 'btn danger-btn';
+            if (seoBatchRemoveFileBtn) seoBatchRemoveFileBtn.disabled = true;
+            if (seoBatchDownloadBtn) seoBatchDownloadBtn.disabled = true;
+            lucide.createIcons();
+
+            let processed = 0;
+            const total = seoBatchRows.length;
+            const model_key = seoBatchSimulateCheckbox.checked ? 'simulation' : seoBatchModelSelect.value;
+
+            for (let i = 0; i < total; i++) {
+                if (seoBatchCancelRequested) {
+                    break;
+                }
+
+                const row = seoBatchRows[i];
+                const badge = document.getElementById(`seo-row-badge-${row.row_num}`);
+                if (badge) {
+                    badge.className = 'batch-status-badge processing';
+                    badge.textContent = 'Optimalizuji';
+                }
+
+                const tr = document.getElementById(`seo-batch-row-${row.row_num}`);
+                if (tr) {
+                    tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+
+                try {
+                    const response = await fetch('/api/seo/process-row', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            filename: seoBatchFilename,
+                            row_num: row.row_num,
+                            url: row.url,
+                            primarni_kw: row.primarni_kw,
+                            intent: row.intent,
+                            typ_stranky: row.typ_stranky,
+                            soucasny_title: row.soucasny_title,
+                            soucasna_desc: row.soucasna_desc,
+                            soucasny_h1: row.soucasny_h1,
+                            usp: row.usp,
+                            brand: row.brand,
+                            konkurence_serp: row.konkurence_serp,
+                            model_key: model_key
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        if (badge) {
+                            badge.className = 'batch-status-badge success';
+                            badge.textContent = 'Hotovo';
+                        }
+
+                        const previewBtn = document.getElementById(`seo-preview-btn-${row.row_num}`);
+                        if (previewBtn) {
+                            previewBtn.disabled = false;
+                            previewBtn.onclick = () => {
+                                showSeoBatchPreview(row.url, data.result);
+                            };
+                        }
+                    } else {
+                        if (badge) {
+                            badge.className = 'batch-status-badge error';
+                            badge.textContent = 'Chyba';
+                        }
+                        console.error(`Chyba optimalizace řádku ${row.row_num}: ${data.error}`);
+                    }
+                } catch (err) {
+                    if (badge) {
+                        badge.className = 'batch-status-badge error';
+                        badge.textContent = 'Chyba';
+                    }
+                    console.error(`Chyba připojení na řádku ${row.row_num}:`, err);
+                }
+
+                processed++;
+                if (seoBatchProgressText) seoBatchProgressText.textContent = `Optimalizováno ${processed} z ${total}`;
+                if (seoBatchProgressBar) seoBatchProgressBar.style.width = `${(processed / total) * 100}%`;
+
+                // Wait 1.5 seconds between rows to respect API pacing
+                if (i < total - 1 && !seoBatchCancelRequested) {
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                }
+            }
+
+            seoBatchIsProcessing = false;
+            seoBatchStartBtn.innerHTML = '<i data-lucide="play"></i> <span>Spustit optimalizaci meta tagů</span>';
+            seoBatchStartBtn.className = 'btn primary-btn';
+            seoBatchStartBtn.disabled = false;
+            if (seoBatchRemoveFileBtn) seoBatchRemoveFileBtn.disabled = false;
+            if (seoBatchDownloadBtn) seoBatchDownloadBtn.disabled = false;
+            lucide.createIcons();
+
+            if (seoBatchCancelRequested) {
+                alert('Optimalizace byla zrušena uživatelem.');
+                seoBatchCancelRequested = false;
+            } else {
+                alert('Optimalizace všech stránek byla úspěšně dokončena!');
+            }
+        });
+    }
+
+    function showSeoBatchPreview(url, result) {
+        document.getElementById('seo-preview-title').textContent = result.title;
+        document.getElementById('seo-preview-desc').textContent = result.description;
+        document.getElementById('seo-preview-h1').textContent = result.h1;
+        document.getElementById('seo-preview-break').textContent = result.pattern_break || 'Není k dispozici.';
+        document.getElementById('seo-preview-smycka').textContent = result.smycka || 'Není k dispozici.';
+        document.getElementById('seo-preview-rizika').textContent = result.rizika || 'Žádná detekovaná rizika.';
+
+        if (seoBatchPreviewModal) seoBatchPreviewModal.style.display = 'flex';
+    }
+
+    if (closeSeoBatchPreviewBtn) {
+        closeSeoBatchPreviewBtn.addEventListener('click', () => {
+            if (seoBatchPreviewModal) seoBatchPreviewModal.style.display = 'none';
+        });
+    }
+
+    if (seoBatchPreviewModal) {
+        seoBatchPreviewModal.addEventListener('click', (e) => {
+            if (e.target === seoBatchPreviewModal) {
+                seoBatchPreviewModal.style.display = 'none';
+            }
+        });
+    }
+
+    if (seoBatchDownloadBtn) {
+        seoBatchDownloadBtn.addEventListener('click', () => {
+            if (!seoBatchFilename) return;
+            window.location.href = `/api/seo/download/${seoBatchFilename}`;
         });
     }
 });

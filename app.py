@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import feed_parser
 import sheet_parser
 import batch_service
-from ai_service import generate_copywriting, get_simulated_copywriting, MODEL_MAPPING
+from ai_service import generate_copywriting, get_simulated_copywriting, generate_seo_snippet, MODEL_MAPPING
 
 load_dotenv()
 
@@ -323,6 +323,92 @@ def batch_process_row():
 @app.route('/api/batch/download/<filename>', methods=['GET'])
 def batch_download(filename):
     """Serves the processed Excel file."""
+    from flask import send_from_directory
+    from werkzeug.utils import secure_filename
+    clean_name = secure_filename(filename)
+    return send_from_directory(app.config['UPLOAD_FOLDER'], clean_name, as_attachment=True)
+
+@app.route('/api/seo/generate-single', methods=['POST'])
+def seo_generate_single():
+    """Generates an SEO snippet for a single page manually."""
+    data = request.json or {}
+    model_key = data.get('model_key', 'claude-sonnet-4-6')
+    try:
+        result = generate_seo_snippet(data, model_key)
+        return jsonify({
+            "success": True,
+            "result": result
+        })
+    except Exception as e:
+        logging.error(f"Chyba při generování single SEO: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@app.route('/api/seo/upload', methods=['POST'])
+def seo_upload():
+    """Handles CSV/Excel upload and returns rows to process for SEO."""
+    if 'file' not in request.files:
+        return jsonify({"success": False, "error": "Žádný soubor nebyl nahrán."}), 400
+        
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"success": False, "error": "Prázdný název souboru."}), 400
+        
+    if not file.filename.lower().endswith(('.xlsx', '.xls', '.csv')):
+        return jsonify({"success": False, "error": "Nepodporovaný typ souboru. Nahrajte pouze CSV nebo Excel (.xlsx, .xls)."}), 400
+        
+    from werkzeug.utils import secure_filename
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
+    
+    try:
+        rows = batch_service.parse_seo_batch(file_path)
+        return jsonify({
+            "success": True,
+            "filename": filename,
+            "total_rows": len(rows),
+            "rows": rows
+        })
+    except Exception as e:
+        logging.error(f"Chyba při parsování nahrávaného souboru pro SEO: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/seo/process-row', methods=['POST'])
+def seo_process_row():
+    """Processes a single row for SEO batch generation and writes to file."""
+    data = request.json or {}
+    filename = data.get('filename', '')
+    row_num = data.get('row_num')
+    model_key = data.get('model_key', 'claude-sonnet-4-6')
+    
+    if not filename or row_num is None:
+        return jsonify({"success": False, "error": "Chybí povinné parametry (filename nebo row_num)."}), 400
+        
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if not os.path.exists(file_path):
+        return jsonify({"success": False, "error": "Soubor neexistuje."}), 400
+        
+    try:
+        result = generate_seo_snippet(data, model_key)
+        
+        # Write to file
+        batch_service.write_seo_to_file(file_path, row_num, result)
+        
+        return jsonify({
+            "success": True,
+            "row_num": row_num,
+            "result": result
+        })
+    except Exception as e:
+        logging.error(f"Chyba při zpracování SEO řádku {row_num}: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/seo/download/<filename>', methods=['GET'])
+def seo_download(filename):
+    """Serves the processed SEO file."""
     from flask import send_from_directory
     from werkzeug.utils import secure_filename
     clean_name = secure_filename(filename)
