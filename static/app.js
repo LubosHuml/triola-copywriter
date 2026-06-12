@@ -1231,6 +1231,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('seo-current-title').value = data.title;
                     document.getElementById('seo-current-desc').value = data.description;
                     document.getElementById('seo-current-h1').value = data.h1;
+                    document.getElementById('seo-usp').value = data.usp || '';
 
                     // Suggest keyword if currently empty
                     const kwInput = document.getElementById('seo-kw');

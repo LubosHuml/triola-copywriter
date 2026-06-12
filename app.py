@@ -346,9 +346,41 @@ def seo_generate_single():
             "error": str(e)
         }), 500
 
+def clean_html_to_text(html):
+    # Remove script and style elements
+    html = re.sub(r'<(script|style)[^>]*>.*?</\1>', '', html, flags=re.IGNORECASE | re.DOTALL)
+    # Remove HTML tags
+    text = re.sub(r'<[^>]*>', ' ', html)
+    # Normalize whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+def extract_usp_with_ai(text, openai_key, anthropic_key, google_key):
+    system_prompt = """Jsi seniorní copywriter a SEO specialista. Z textu e-shopové stránky vytáhni 1 až 3 konkrétní věcné výhody (USP) produktu nebo kategorie.
+Pravidla pro výhody:
+- Pouze fakta, čísla, parametry, výhody (např. 'české šití', 'košíčky do velikosti J', '47 střihů skladem', 'bezešvé košíčky').
+- ŽÁDNÉ prázdné fráze (jako 'nejlepší kvalita', 'skvělý výběr', 'luxusní prádlo').
+- Výstup musí být ve formátu: výhody oddělené čárkami a mezerou (např: české šití, košíčky do velikosti J, 47 střihů skladem).
+- Vrať POUZE tento čárkami oddělený seznam, bez jakýchkoliv keců okolo (žádné 'Zde jsou výhody:', '1.', '•', atd.)."""
+
+    user_prompt = f"Zde je text stránky:\n\n{text}\n\nVytáhni USP:"
+
+    try:
+        from ai_service import execute_with_retry, generate_with_openai, generate_with_anthropic, generate_with_gemini
+        
+        if anthropic_key:
+            return execute_with_retry(generate_with_anthropic, anthropic_key, "claude-sonnet-4-6", system_prompt, user_prompt).strip()
+        elif openai_key:
+            return execute_with_retry(generate_with_openai, openai_key, "gpt-4o-mini", system_prompt, user_prompt).strip()
+        elif google_key:
+            return execute_with_retry(generate_with_gemini, google_key, "gemini-2.5-flash", system_prompt, user_prompt).strip()
+    except Exception as e:
+        logging.error(f"Chyba při AI extrakci USP: {e}")
+    return ""
+
 @app.route('/api/seo/scrape', methods=['POST'])
 def seo_scrape_page():
-    """Fetches a page by URL and extracts title, meta description, and H1."""
+    """Fetches a page by URL and extracts title, meta description, H1, and AI-extracted USP."""
     data = request.json or {}
     url = data.get('url', '').strip()
     
@@ -419,11 +451,22 @@ def seo_scrape_page():
         description = parser.description.strip()
         h1 = parser.h1.strip()
         
+        # Extract USP using first available API key
+        usp = ""
+        openai_key = os.getenv("OPENAI_API_KEY")
+        anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+        google_key = os.getenv("GOOGLE_API_KEY")
+        
+        if openai_key or anthropic_key or google_key:
+            clean_text = clean_html_to_text(html_content)[:6000]
+            usp = extract_usp_with_ai(clean_text, openai_key, anthropic_key, google_key)
+            
         return jsonify({
             "success": True,
             "title": title,
             "description": description,
-            "h1": h1
+            "h1": h1,
+            "usp": usp
         })
         
     except Exception as e:
@@ -432,6 +475,7 @@ def seo_scrape_page():
             "success": False,
             "error": f"Nepodařilo se stáhnout stránku: {str(e)}"
         }), 500
+
 
 @app.route('/api/seo/upload', methods=['POST'])
 def seo_upload():
