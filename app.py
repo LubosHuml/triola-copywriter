@@ -124,6 +124,7 @@ def generate():
             "cut_name": cut_data["cut_name"],
             "characteristics": cut_data["characteristics"],
             "benefits": cut_data["benefits"],
+            "recommendation": cut_data.get("recommendation", ""),
             "all_colors": ["černá", "bílá", "tělová"],
             "combined_description": ""
         }
@@ -277,6 +278,7 @@ def batch_process_row():
             "characteristics": cut_data["characteristics"],
             "benefits": cut_data["benefits"],
             "docx_description": cut_data.get("docx_description", ""),
+            "recommendation": cut_data.get("recommendation", ""),
             "all_colors": [color_name] if color_name else ["standardní"],
             "combined_description": "",
             "sales_arguments": arguments

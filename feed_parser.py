@@ -65,44 +65,172 @@ def detect_cut_properties(code, title, description):
     cut_name = "Neznámý střih"
     characteristics = "Standardní produkt spodního prádla."
     benefits = []
+    recommendation = ""
     
     # 1. Base classification based on codes or title
-    # 28xxx - Perfect-Fit
-    if code_str.startswith("28") or "perfect fit" in title_lower or "perfect-fit" in title_lower:
-        cut_name = "Perfect-Fit"
-        characteristics = "Hladká, tence vyztužená podprsenka s kosticemi navržená pro maximální oporu a formování postavy."
-        benefits = [
-            "Tence vyztužené bezešvé košíčky, které prsa nezvětšují, ale fixují v ideální výšce",
-            "Materiál z jemného mikrovlákna se nerýsuje ani pod přiléhavým oblečením",
-            "Flexi kostice se přizpůsobí pohybu těla a nikde netlačí",
-            "Rozšířená ramínka ulevují ramenům a krční páteři",
-            "Ideální pro střední a velká prsa (velikosti B až M)"
-        ]
+    # 28xxx - Perfect-Fit / Support-Fit
+    if code_str.startswith("28") or "perfect fit" in title_lower or "perfect-fit" in title_lower or "support fit" in title_lower or "support-fit" in title_lower:
+        if "nevyztužen" in title_lower or "nevyztuzen" in title_lower or "nevyztužen" in desc_lower or "nevyztuzen" in desc_lower or "support" in title_lower or "support" in desc_lower:
+            cut_name = "Support-Fit"
+            characteristics = "Nevyztužená podprsenka s kosticemi navržená pro optimální zpevnění a formování. Otázka pro zákaznici: „Chtěla byste podprsenku, která prsa krásně podrží, ale zároveň je zpevní a formuje?“"
+            benefits = [
+                "Nevyztužená s kosticemi.",
+                "Formující efekt – opticky zmenší objem prsou až o jednu velikost, ale zanechá přirozený tvar.",
+                "Flexi kostice – při pohybu pracují s tělem, nezapichují se do podpaží.",
+                "Komfortní rozšířená ramínka – odlehčují ramenům, poskytují pohodlí po celý den.",
+                "Ideální pro ženy, které chtějí tvarovat poprsí, ale zachovat jemnost a ženskost.",
+                "Romantická krajka přidává eleganci, aniž by ubírala na funkčnosti.",
+                "Kombinuje krásu a praktičnost – podprsenka, která drží i hýčká."
+            ]
+            recommendation = "Ukažte zákaznici, že tahle podprsenka kombinuje funkčnost s elegancí. Krajka zvýrazní ženskost, ale střih zajistí pevnost i lehkost při nošení."
+        else:
+            cut_name = "Perfect-Fit"
+            characteristics = "Hladká, tence vyztužená podprsenka s kosticemi navržená pro maximální oporu a formování postavy. Otázka pro zákaznici: „Máte pocit, že vaše podprsenka spíš prsa přidává, než formuje? Tahle naopak opticky zmenší a přitom podrží.“"
+            benefits = [
+                "Bezešvé vyztužené košíčky s povrchem Ultrafein (ultra jemný, hladký obyčejný povrch) – dokonale se přizpůsobí tvaru prsou a vytvářejí přirozeně kulatý tvar.",
+                "Formující efekt – opticky zmenší poprsí až o jednu velikost, zachová přitom krásné křivky.",
+                "Flexi kostice – pružně se přizpůsobí pohybu těla, nikde netlačí ani neškrtí.",
+                "Široká ramínka – poskytují pohodlí a ulevují ramenům i u větších velikostí.",
+                "Pevný obvod z funkčního materiálu – unese váhu poprsí a udrží jej v požadované výšce po celý den.",
+                "Ideální pro ženy s plnějším poprsím, které chtějí podprsenku s perfektní oporou a hladkým efektem pod oblečením.",
+                "Díky bezešvým košíčkům je skvělá pod přiléhavé topy i trička."
+            ]
+            recommendation = "Využijte moment, kdy zákaznice zkouší podprsenku – ukažte jí v zrcadle rozdíl, jak Perfect Fit zeštíhlí siluetu a zvýrazní přirozený tvar."
+
     # 22xxx - T-Fit
     elif code_str.startswith("22") or "t-fit" in title_lower or "t-šev" in desc_lower or "t-šev" in title_lower or "t-šev" in title_lower:
         cut_name = "T-Fit"
-        characteristics = "Tradiční vyztužený střih s třídílnými košíčky sešitými do tvaru písmene T."
+        characteristics = "Tradiční vyztužený střih s třídílnými košíčky sešitými do tvaru písmene T pro kulatý tvar a velkou oporu. Otázka pro zákaznici: „Chtěla byste podprsenku, která tvaruje přirozeně, ale zároveň drží a zvýrazní dekolt?“"
         benefits = [
-            "Třídílný šitý košíček prsa perfektně zakulatí a upevní na středu",
-            "Poskytuje skvělou oporu a vytvaruje nádherný dekolt i u povadlejšího poprsí",
-            "Vyztužená konstrukce s pevnými kosticemi pro spolehlivost po celý den",
-            "Vhodná pro malé, střední i velmi velké velikosti"
+            "T-šev zajistí přirozeně kulatý tvar prsou a drží váhu prsou.",
+            "Vhodná pro každodenní nošení.",
+            "Švy jsou rozešité – příjemné na těle.",
+            "Spodní šev – zvedá prsa nahoru do přirozeného kulatého tvaru.",
+            "Potažená ramínka – nezařezávají se.",
+            "Podprsenka je velmi měkká, pod tričkem téměř neviditelná.",
+            "Košíčky podšité bavlnou – ideální i pro citlivější pokožku.",
+            "Je vhodný na drobnou asymetrii prsou.",
+            "Má zakulacené kostice vložené do měkkého tunýlku, příjemné na těle."
         ]
+        recommendation = "Využijte moment, kdy zákaznice obdivuje střih – vysvětlete jí, že právě T-šev vytváří jejich přirozený kulatý tvar. Tento střih si zamiluje hned po prvním vyzkoušení. (Vždy dávejte triko s větší gramáží bambusové, Eldar)"
+
     # 29xxx - Top-Fit / Sensual-Fit
     elif code_str.startswith("29") or "top fit" in title_lower or "top-fit" in title_lower or "sensual-fit" in title_lower or "sensual fit" in title_lower:
-        if "sensual-fit" in title_lower or "sensual fit" in title_lower:
+        if "sensual" in title_lower or "sensual" in desc_lower:
             cut_name = "Sensual-Fit"
+            characteristics = "Bezešvá vyztužená podprsenka s vyšším středem a krajkovým obvodem. Otázka pro zákaznici: „Máte ráda, když podprsenka spojuje pohodlí s elegancí a zvýrazní přirozenou ženskost?“"
+            benefits = [
+                "Bezešvé košíčky z lehké pěny s povrchem Ultrafein (ultra jemný, hladký povrch) – přizpůsobí se tvaru poprsí a vytváří hladký efekt pod oblečením.",
+                "Vyšší střed než u Top-fit – vykouzlí sexy dekolt, ale zároveň prsa fixuje a udrží na místě.",
+                "Výstřih zpracovaný pruženkou nebo paspulí, které lehce pruží a přizpůsobí se tělu. Brání tomu, aby se výstřih košíčků po nošení a praní vytáhl a vytáčel směrem ven.",
+                "Krajková ramínka – jsou pohodlná, nezařezávají se, poskytují stabilní oporu a zároveň zdobí podprsenku.",
+                "Průramky a zadní díly jsou olemované proužkem a díky tomu neškrábou v podpaží – vhodné i pro citlivé zákaznice.",
+                "Pevný obvod z krajky – unese váhu prsou a drží tvar.",
+                "Univerzální střih – vhodný pro každodenní nošení i výjimečné příležitosti.",
+                "Má zakulacené kostice vložené do měkkého tunýlku, příjemné na těle pro maximální pohodlí.",
+                "Kostice je více uzavřená a mnohdy dáváme o koš hlubší."
+            ]
+            recommendation = "Nechte zákaznici dotknout se košíčků – vysvětlete, že technologie Ultra Fine dává střihu Sensual-Fit hebkost i tvar. Ukažte jí, jak krásně vypadá dekolt díky nižšímu středu a jemné krajce."
         else:
             cut_name = "Top-Fit"
-        characteristics = "Hladká, tence vyztužená podprsenka s nižším středem a otevřenějším dekoltem."
+            characteristics = "Hladká vyztužená podprsenka s nízkým středem pro hluboký dekolt. Otázka pro zákaznici: „Kdy naposledy jste měla podprsenku, která vám dodala sebevědomí do výstřihu?“"
+            benefits = [
+                "Bezešvé košíčky z lehké pěny s povrchem Ultrafein (ultra jemný, hladký povrch) – přizpůsobí se tvaru poprsí a vytváří hladký efekt pod oblečením (dává prsa k sobě).",
+                "Nízký střed – vykouzlí sexy hluboký dekolt, ideální do výstřihů.",
+                "Výstřih zpracovaný pruženkou nebo paspulí, které lehce pruží a přizpůsobí se tělu. Brání tomu, aby se výstřih košíčků po nošení a praní vytáhl a vytáčel směrem ven.",
+                "Ramínka se nezařezávají, poskytují stabilní oporu a nenesou váhu prsou.",
+                "Pevný obvod z funkčního materiálu nebo krajky – unese váhu prsou a drží tvar.",
+                "Má zakulacené kostice vložené do měkkého tunýlku, příjemné na těle.",
+                "Otevřená kostice – vhodná také na prsa od sebe.",
+                "Univerzální střih – vhodný pro každodenní nošení i výjimečné příležitosti."
+            ]
+            recommendation = "Využijte moment, kdy zákaznice obdivuje svůj dekolt – ukažte jí, jak střih Top Fit podtrhne ženskost, ale zůstává přirozený a pohodlný. (Vždy dáváme triko s výstřihem)"
+
+    # 26xxx - Sexy-Fit
+    elif code_str.startswith("26") or "sexy-fit" in title_lower or "sexy fit" in title_lower:
+        cut_name = "Sexy-Fit"
+        characteristics = "Balkonový střih s tence vyztuženými košíčky pro svůdný dekolt. Otázka pro zákaznici: „Chcete podprsenku, která zvýrazní váš dekolt, ale zůstane přirozená a pohodlná?“"
         benefits = [
-            "Nízký střed je ideální pro hluboké výstřihy do tvaru V",
-            "Bezešvé košíčky vytvářejí hladkou siluetu, která je neviditelná pod oblečením",
-            "Boční kostice a pevný obvod spolehlivě zafixují i větší poprsí",
-            "Často doplněna o elegantní krajkové detaily na obvodu"
+            "Tence vyztužené košíčky – zvýrazní dekolt, zafixují prsa a vytvoří kulatý tvar poprsí.",
+            "Košíček je podšitý bavlnou – vhodný pro citlivou pokožku, přírodní materiál na těle.",
+            "Balkonový střih – ideální do výstřihů a pro ženy, které chtějí svůdný efekt.",
+            "Všité flexi kostice – přizpůsobí se pohybu těla, netlačí a neomezují.",
+            "Pro menší a střední poprsí – poskytuje spolehlivou oporu a přirozený tvar.",
+            "Díky sešívaným košíčkům s pěnovou výztuží podprsenka krásně vytvaruje i měkká prsa.",
+            "Spojení elegance a komfortu – ženskost, kterou zákaznice ucítí hned při vyzkoušení.",
+            "Vždy přes podprsenku dejte triko větší hustoty, ať zákaznice vidí krásný tvar prsu a siluetu, kterou jí střih vytvoří."
         ]
-    # 27xxx - Krajková / Polo-vyztužená / Sexy-Fit
-    elif code_str.startswith("27") or "polo-vyztužen" in desc_lower or "polo vyztuž" in desc_lower or "sexy-fit" in title_lower or "částečně vyztuž" in desc_lower:
+        recommendation = "Ukažte zákaznici, jak střih Sexy-Fit podtrhuje ženskost, a přitom drží dokonale tvar. (Dávej triko větší gramáže jako je bambusové, Eldar)"
+
+    # 21xxx - Comfy-Fit / Contour-Fit
+    elif code_str.startswith("21") or "comfy-fit" in title_lower or "comfy fit" in title_lower or "contour fit" in title_lower or "contour-fit" in title_lower:
+        if "contour" in title_lower or "contour" in desc_lower or "krajk" in title_lower or "krajk" in desc_lower:
+            cut_name = "Contour-Fit"
+            characteristics = "Nevyztužené krajkové košíčky s kosticemi a bočním dílkem pro stabilitu. Otázka pro zákaznici: „Chcete podprsenku, která vypadá jemně, ale podrží i větší poprsí?“"
+            benefits = [
+                "Nevyztužené košíčky s kosticemi – přirozený tvar, pevná opora a pohodlí.",
+                "Díky prošití je vhodná na asymetrii prsou.",
+                "Jemná elastická krajka – podšitá funkčním úpletem a neprosvítá, vytváří elegantní efekt.",
+                "Všitý boční dílek – zabraňuje rozlití prsou do stran, pomáhá udržet kulatý tvar.",
+                "Flexi kostice – kopírují pohyb těla, netlačí a přirozeně drží tvar.",
+                "Pohodlná ramínka – nezařezávají se a poskytují stabilní podporu.",
+                "Pevný obvod – udržuje poprsí v požadované výšce a zaručuje celodenní komfort.",
+                "Vhodná pro střední a větší prsa – poskytne jistotu a pohodlí bez kompromisu.",
+                "Elegantní vzhled a spolehlivá opora – ideální volba pro ženy, které chtějí krajku a komfort zároveň."
+            ]
+            recommendation = "Využijte moment, kdy zákaznice obdivuje krajku – ukažte jí, že Contour-Fit spojuje eleganci s oporou. Díky bočnímu dílku zůstane prsa u sebe a postava působí vyváženě."
+        else:
+            cut_name = "Comfy-Fit"
+            characteristics = "Nevyztužená podprsenka s kosticemi pro maximální oporu a odlehčení ramen. Otázka pro zákaznici: „Chtěla byste podprsenku, která podrží, ale přitom ji na těle téměř necítíte?“"
+            benefits = [
+                "Nevyztužené košíčky s kosticemi – ideální pro větší a těžší poprsí, které potřebuje pevnou oporu bez výztuže.",
+                "Dokonalý střih – zafixuje prsa na střed a udrží je v přirozeném tvaru.",
+                "Flexi kostice – přizpůsobí se pohybu těla, netlačí a neomezují.",
+                "Široká podložená ramínka – pohodlná, nezařezávají se a rozloží váhu poprsí.",
+                "Funkční jemný úplet – prodyšný, měkký na dotek, vhodný i pro celodenní nošení.",
+                "Jemná elastická krajka – dodává eleganci a ženskost i u větších velikostí.",
+                "Vysoký komfort – kombinace stylu, podpory a pohodlí v jednom modelu.",
+                "Přirozený tvar bez výztuže – vhodná pro ženy, které chtějí komfort a lehkost.",
+                "Ideální pro asymetrii prsou – přizpůsobí se každé postavě."
+            ]
+            recommendation = "Využijte moment, kdy zákaznice obdivuje, jak se jí prsa přirozeně zvedla – vysvětlete, že Comfy-Fit drží bez výztuže, jen díky chytrému střihu a kosticím, které se hýbou s tělem."
+
+    # 18xxx - Soft-Fit
+    elif code_str.startswith("18") or "soft-fit" in title_lower or "soft fit" in title_lower:
+        cut_name = "Soft-Fit"
+        characteristics = "Trojúhelníkový střih bez kostic pro absolutní svobodu a pohodlí. Otázka pro zákaznici: „Máte ráda, když podprsenku celý den necítíte, ale přesto vypadáte skvěle?“"
+        benefits = [
+            "Trojúhelníkový střih bez kostic – přirozený tvar prsou a pocit volnosti.",
+            "Jemné, hladké a bezešvé košíčky – pod oblečením se nerýsují.",
+            "Prodyšný materiál – lehký, příjemný na těle.",
+            "Originální zdobení – dodává podprsence jemnost a luxusní vzhled a zároveň prsa fixuje na místě.",
+            "Maximální komfort – vhodná pro menší a středně velká prsa, ideální i jako volnočasová podprsenka.",
+            "Působí jako druhá kůže – zákaznice ji téměř necítí, přesto drží tvar.",
+            "Ramínka nepadají díky chytrému umístění na střed.",
+            "Lehkost, svoboda a elegance v jednom střihu."
+        ]
+        recommendation = "Ukažte zákaznici, že tahle podprsenka kombinuje funkčnost s elegancí. Zdobná vsadka ve výstřihu zvýrazní ženskost, ale střih zajistí pevnost i lehkost při nošení."
+
+    # 14xxx - Casual-Fit
+    elif code_str.startswith("14") or "casual-fit" in title_lower or "casual fit" in title_lower or "bez kostic" in title_lower or "bez kostic" in desc_lower or "bezkosticová" in desc_lower:
+        cut_name = "Casual-Fit"
+        characteristics = "Volnočasová a neformální podprsenka bez kostic s vysokým komfortem. Otázka pro zákaznici: „Máte někdy pocit, že chcete mít doma pohodlí, ale nechcete se vzdát pěkného tvaru?“"
+        benefits = [
+            "Nevyztužené košíčky bez kostic – přirozený tvar prsou, maximální pohodlí a volnost.",
+            "Široká podložená ramínka – poskytují komfort, nezařezávají se a rozkládají váhu prsou.",
+            "Elastický obvod – přizpůsobí se tělu a udrží prsa v přirozené výšce.",
+            "Propracovaný střih – formuje poprsí do přirozeného tvaru.",
+            "Ideální na volný čas, spaní nebo po operaci – lehkost bez kompromisů v opoře.",
+            "Vhodná pro střední i větší velikosti – drží i bez kostic díky chytrému střihu.",
+            "Komfort bez kostic – ideální pro ženy, které hledají pohodlí.",
+            "Drží i větší prsa, přesto zůstává lehká a vzdušná.",
+            "Skvělá volba na doma i na spaní.",
+            "Elegantní vzhled díky jemnému žakáru, který dodává luxus i jednoduchosti."
+        ]
+        recommendation = "Ukažte zákaznici, že Casual-Fit drží i bez kostic – díky chytrému střihu. Nechte ji zažít ten rozdíl: svobodu pohybu a přirozený tvar, který působí jemně, ale drží spolehlivě."
+
+    # 27xxx - Krajková / Polo-vyztužená (Fallback)
+    elif code_str.startswith("27") or "polo-vyztužen" in desc_lower or "polo vyztuž" in desc_lower or "částečně vyztuž" in desc_lower:
         cut_name = "Krajková / Polo-vyztužená"
         characteristics = "Elegantní model kombinující funkční oporu vyztužené spodní části košíčku s jemností elastické krajky v horní části."
         benefits = [
@@ -111,32 +239,8 @@ def detect_cut_properties(code, title, description):
             "Kombinace luxusního ženského vzhledu a každodenního komfortu",
             "Široká škála velikostí"
         ]
-    # 26xxx / 21xxx / 26xxx - Fixed-Fit / Comfy-Fit / S bočními dílky
-    elif code_str.startswith("26") or code_str.startswith("21") or "fixed fit" in title_lower or "fixed-fit" in title_lower or "comfy-fit" in title_lower or "boční díl" in desc_lower or "bočními dílky" in desc_lower:
-        if code_str.startswith("21") or "comfy" in title_lower:
-            cut_name = "Comfy-Fit"
-        else:
-            cut_name = "Fixed-Fit"
-        characteristics = "Střih s fixačními bočními dílky navržený speciálně pro plné, těžké poprsí s důrazem na maximální fixaci a odlehčení zad."
-        benefits = [
-            "Boční dílky košíčků prsa přitáhnou ke středu a zabrání jejich rozlévání do stran",
-            "Pevný obvod a speciální konstrukce drží prsa pevně na středu a ve správné výšce",
-            "Měkce podložená, široká ramínka rovnoměrně rozkládají váhu a ulehčují krční páteři",
-            "Zadní obvod s pevným podložením, které se nevytahuje"
-        ]
-    # 14xxx - Soft-Fit (Bez kostic) / Casual-Fit
-    elif code_str.startswith("14") or "bez kostic" in title_lower or "bez kostic" in desc_lower or "bezkosticová" in desc_lower or "casual-fit" in title_lower:
-        if "casual" in title_lower or "casual-fit" in title_lower:
-            cut_name = "Casual-Fit"
-        else:
-            cut_name = "Soft-Fit (Bez kostic)"
-        characteristics = "Nevyztužená nebo tence vyztužená podprsenka zcela bez kostic pro absolutní svobodu pohybu."
-        benefits = [
-            "Žádné kostice – podprsenka nikde netlačí, netáhne a je extrémně pohodlná",
-            "Třídílný střih košíčků s bočním dílkem přesto prsa spolehlivě zafixuje a vytvaruje",
-            "Měkce vypodložená ramínka a elastický, přesto pevný obvod",
-            "Skvělá volba pro domácí nošení, volný čas nebo pro ženy s citlivou pokožkou"
-        ]
+        recommendation = "Doporučeno pro ženy, které vyhledávají elegantní vzhled s krajkou, ale zároveň vyžadují pevnou podporu vyztuženého spodního košíčku."
+
     elif "plavk" in title_lower or "plavky" in desc_lower or "plavková" in title_lower:
         cut_name = "Plavky Triola"
         characteristics = "Funkční plavková podprsenka z rychleschnoucího a odolného materiálu."
@@ -146,6 +250,8 @@ def detect_cut_properties(code, title, description):
             "Variabilní ramínka s možností zapnutí do kříže nebo zavázání za krkem",
             "Odolnost vůči chloru a slunečnímu záření"
         ]
+        recommendation = ""
+
     elif "kalhotky" in title_lower or "panties" in title_lower or "brazilky" in title_lower or "tanga" in title_lower or "panty" in title_lower or code_str.startswith("31") or code_str.startswith("32") or code_str.startswith("34") or code_str.startswith("35") or code_str.startswith("37"):
         if "brazilky" in title_lower or "brazilky" in desc_lower or code_str.startswith("34") or code_str.startswith("37"):
             cut_name = "Brazilky"
@@ -163,6 +269,7 @@ def detect_cut_properties(code, title, description):
             "Bavlněný hygienický klínek pro maximální pohodlí a čistotu",
             "Zadní díl u brazilky zpracovaný bezešvě, aby se nerýsoval pod oblečením"
         ]
+        recommendation = ""
 
     # 2. DOCX Cut specifications mapping
     docx_data = load_docx_cuts()
@@ -216,6 +323,7 @@ def detect_cut_properties(code, title, description):
         "cut_name": cut_name,
         "characteristics": characteristics,
         "benefits": benefits,
+        "recommendation": recommendation,
         "docx_description": docx_desc
     }
 
@@ -338,6 +446,7 @@ def group_products(products):
                 "characteristics": cut_data["characteristics"],
                 "benefits": cut_data["benefits"],
                 "docx_description": cut_data.get("docx_description", ""),
+                "recommendation": cut_data.get("recommendation", ""),
                 "base_price": p["price"],
                 "sale_price": p["sale_price"],
                 "variants": [],

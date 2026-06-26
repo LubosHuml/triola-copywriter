@@ -52,7 +52,7 @@ ZÁKLADNÍ MARKETINGOVÁ PRAVIDLA A TÓN ZNAČKY:
 3. Styl a plynulost: Píšeme pro čtenáře, ne pro roboty. Vyhýbej se klišé jako "must-have", "nechte se hýčkat", "jedinečný kousek" či "fascinující". Raději buď konkrétní (např. místo "skvělý materiál" napiš "pružný žakárový úplet s podílem elastanu").
 4. Zákaz robotického AI jazyka: Vyhni se slovům jako "klíčový", "transformovat", "vstupte do světa", "navržen tak, aby", "představujeme vám". Piš přirozeně, jako bys mluvila s kamarádkou, ale s odbornou autoritou.
 5. Správná terminologie: Používej termíny jako "flexi kostice", "T-šev", "Spacer košíček", "Perfect-Fit střih", "zadní díl s pevným podložením".
-6. ZÁKAZ FABULACE KOLEKCÍ: Nikdy si nevymýšlej žádné názvy kolekcí (např. Tina atd.). Zmiňuj pouze název kolekce, který je explicitně uveden v marketingových podkladech. Pokud tam není, o žádné kolekci nepiš!
+6. ZÁKAZ ZMÍNĚNÍ NÁZVŮ KOLEKCÍ: V textu NIKDY neuváděj ani nezmiňuj žádné názvy kolekcí (např. Selena, Tina, Olivia, atd.). Tuto informaci do textu nepromítej, a to ani tehdy, pokud je název kolekce uveden v původním popisku nebo v prodejních argumentech. Značku prezentujeme jako celek bez pojmenování jednotlivých kolekcí v produktových popiscích.
 
 INFORMACE O STŘIZÍCH TRIOLA (ZNALOSTNÍ BÁZE):
 - Perfect-Fit: Hladká, tence vyztužená podprsenka s kosticemi. Nezvětšuje objem, ale fixuje prsa v ideální výšce. Vhodná pro střední a velké velikosti pod přiléhavé oblečení.
@@ -266,6 +266,7 @@ def generate_copywriting(product_info, format_type, model_key, tone_key, length_
     prod_price = product_info.get("base_price", "")
     prod_desc = product_info.get("combined_description", "")
     prod_docx = product_info.get("docx_description", "")
+    prod_recommendation = product_info.get("recommendation", "")
     
     # Excel marketing data fields
     collection = product_info.get("collection", "")
@@ -305,8 +306,6 @@ def generate_copywriting(product_info, format_type, model_key, tone_key, length_
     marketing_block = ""
     if collection or sales_arguments or target_group or extra_descriptions:
         marketing_block = "\nDŮLEŽITÉ PODKLADY Z MARKETINGOVÉ TABULKY ZNAČKY:\nPři tvorbě textu povinně vycházej a dominantně stav na těchto oficiálních marketingových prodejních argumentech:\n"
-        if collection: 
-            marketing_block += f"- Název kolekce: {collection}\n"
         if target_group: 
             marketing_block += f"- Cílová skupina / Vhodné pro: {target_group}\n"
         if sales_arguments: 
@@ -327,10 +326,11 @@ KÓD MODELU: {prod_code}
 STŘIH PODPRSENKY: {prod_cut}
 CHARAKTERISTIKA STŘIHU: {prod_char}
 OFICIÁLNÍ KONSTRUKČNÍ SPECIFIKACE STŘIHU (z Wordu): {prod_docx if prod_docx else 'Není specifikováno'}
-KLÍČOVÉ VÝHODE: {prod_benefits}
+KLÍČOVÉ VÝHODY: {prod_benefits}
+DOPORUČENÉ PRODEJNÍ ARGUMENTY A TIPY STYLISTKY: {prod_recommendation if prod_recommendation else 'Nejsou specifikovány'}
 DOSTUPNÉ BARVY: {prod_colors}
 DŮLEŽITÉ UPOZORNĚNÍ K BARVĚ: V celém textu piš VÝHRADNĚ o barvě uvedené v poli "DOSTUPNÉ BARVY" (tj. {prod_colors}). Ignoruj jakékoliv jiné barvy zmíněné v původním popisu produktu nebo v marketingových podkladech, pokud se liší od této zadané barvy. Například pokud je zadaná barva "{prod_colors}" (např. lilková, bordó), nesmí se v textu objevit slovo "černá" nebo "bílá" z původního popisu!
-DŮLEŽITÉ UPOZORNĚNÍ K NÁZVŮM KOLEKCÍ: Nikdy si nevymýšlej ani nepředpokládej žádný název kolekce (např. Tina atd.), pokud není výslovně uveden pod klíčem "Název kolekce" v marketingových podkladech níže. Pokud je tam hodnota prázdná, v textu o žádné kolekci nepiš!
+DŮLEŽITÉ UPOZORNĚNÍ K NÁZVŮM KOLEKCÍ: V textu NIKDY neuváděj ani nezmiňuj žádné názvy kolekcí (např. Selena, Tina, Olivia, atd.). Pokud se název jakékoliv kolekce objeví v původním popisu nebo v marketingových podkladech, ignoruj ho a nezmiňuj.
 PŮVODNÍ POPIS PRODUKTU: {prod_desc_clean}
 -----------------
 {marketing_block}
