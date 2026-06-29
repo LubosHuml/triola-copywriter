@@ -429,6 +429,40 @@ Udělejte si radost na Triola.cz.
 
     return f"{intro}\n\n{body}\n\n{benefits}\n\n{stylist}"
 
+def parse_robust_json(text, expected_keys):
+    """
+    Attempts to parse a JSON string, recovering from common formatting errors
+    like markdown wrappers, unescaped quotes, unescaped newlines.
+    """
+    import json
+    text = text.strip()
+    # Remove markdown code block wrappers
+    text = re.sub(r'^```(?:json)?\s*', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'\s*```$', '', text)
+    text = text.strip()
+    
+    try:
+        return json.loads(text)
+    except Exception as e:
+        logging.warning(f"Standardní json.loads selhalo ({e}). Pokouším se o záchranu pomocí regulárních výrazů...")
+        
+    parsed = {}
+    for key in expected_keys:
+        # Match key with lookahead for next key or closing braces
+        pattern = rf'"{key}"\s*:\s*"(.*?)"(?=\s*,\s*"[a-zA-Z0-9_]+"\s*:|\s*"\s*,\s*}}|\s*"\s*}}|\s*"\s*,\s*\n|\s*"\s*,\s*\r)'
+        match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
+        if match:
+            parsed[key] = match.group(1).strip()
+        else:
+            # Fallback simple pattern
+            pattern_simple = rf'"{key}"\s*:\s*"(.*?)"\s*(?:,|\}})'
+            match_simple = re.search(pattern_simple, text, re.DOTALL | re.IGNORECASE)
+            if match_simple:
+                parsed[key] = match_simple.group(1).strip()
+            else:
+                parsed[key] = ""
+    return parsed
+
 def generate_seo_snippet(data, model_key="claude-sonnet-4-6"):
     """
     Generates an SEO snippet (title, description, H1) based on intent and USP.
@@ -477,15 +511,8 @@ def generate_seo_snippet(data, model_key="claude-sonnet-4-6"):
         else:
             raise ValueError(f"Nepodporovaný typ modelu: {model_key}")
             
-        # Clean up JSON formatting markdown blocks if returned
-        text = text.strip()
-        text = re.sub(r'^```(?:json)?\s*', '', text, flags=re.IGNORECASE)
-        text = re.sub(r'\s*```$', '', text)
-        text = text.strip()
-        
-        # Try to parse as JSON to ensure validity
-        parsed = json.loads(text)
-        return parsed
+        expected = ["url", "title", "title_znaku", "description", "desc_znaku", "h1", "pattern_break", "smycka", "rizika"]
+        return parse_robust_json(text, expected)
     except Exception as e:
         logging.error(f"Chyba při generování SEO snippetu: {e}")
         # Return fallback structured dict on failure
@@ -673,18 +700,8 @@ Odpověz VÝHRADNĚ ve formátu JSON s touto strukturou:
         else:
             raise ValueError(f"Nepodporovaný typ modelu: {model_key}")
             
-        text = text.strip()
-        text = re.sub(r'^```(?:json)?\s*', '', text, flags=re.IGNORECASE)
-        text = re.sub(r'\s*```$', '', text)
-        text = text.strip()
-        
-        parsed = json.loads(text)
-        
         required_keys = ["eshop_name", "short_desc", "eshop_desc1", "eshop_desc2", "meta_title", "meta_desc"]
-        for k in required_keys:
-            if k not in parsed:
-                parsed[k] = ""
-                
+        parsed = parse_robust_json(text, required_keys)
         return parsed
         
     except Exception as e:

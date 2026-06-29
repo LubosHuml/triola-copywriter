@@ -262,17 +262,27 @@ def parse_batch_excel(file_path, products_db):
         if not code_str or code_str == "None":
             continue
             
+        if code_str.endswith(".0"):
+            code_str = code_str[:-2]
+            
         # Parse model and color code (e.g. 22859/88)
         parts = code_str.split('/')
         model_code = parts[0].strip()
+        if model_code.endswith(".0"):
+            model_code = model_code[:-2]
+            
         color_code = parts[1].strip() if len(parts) > 1 else ""
-        
+        if color_code.endswith(".0"):
+            color_code = color_code[:-2]
+            
         # Check if there is a separate color column and color_code is not yet parsed
         color_name_override = None
         if not color_code and mapping["color"] != -1:
             raw_color = ws.cell(row=r, column=mapping["color"] + 1).value
             if raw_color is not None:
                 color_str = str(raw_color).strip()
+                if color_str.endswith(".0"):
+                    color_str = color_str[:-2]
                 if color_str.isdigit():
                     color_code = color_str
                 else:
