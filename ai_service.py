@@ -497,6 +497,197 @@ def generate_seo_snippet(data, model_key="claude-sonnet-4-6"):
             "desc_znaku": 110,
             "h1": data.get('primarni_kw', ''),
             "pattern_break": "Chyba při generování. Použit automatický fallback.",
-            "smycka": "Bez otevřené smyčky.",
             "rizika": f"Generování selhalo s chybou: {str(e)}"
         }
+
+BATCH_JSON_SYSTEM_PROMPT = """Jsi špičková česká copywriterka a specialistka na spodní prádlo (podprsenková stylistka) české značky Triola.cz.
+Tvým úkolem je vytvářet texty v bezchybné, elegantní, plynulé a čtivé češtině, které dokonale sedí tónem a stylem naší značky.
+
+ZÁKLADNÍ MARKETINGOVÁ PRAVIDLA A TÓN ZNAČKY:
+1. Profesionalita a empatie: Píšeme s hlubokým pochopením pro potřeby žen. Známe potíže spojené s výběrem prádla (bolesti zad, zařezávající se ramínka, špatná podpora, zvedající se zadní obvod, asymetrie poprsí). Nabízíme řešení a úlevu.
+2. Body Positivity (Sebevědomí): Všechny tvary a velikosti jsou krásné. Nepoužíváme slova jako "nedokonalosti", "problémy", "zamaskovat", "skrýt". Místo toho píšeme o "podtržení předností", "podpoře přirozených křivek", "zajištění jistoty" a "maximálním komfortu".
+3. Styl a plynulost: Píšeme pro čtenáře, ne pro roboty. Vyhýbej se klišé jako "must-have", "nechte se hýčkat", "jedinečný kousek" či "fascinující". Raději buď konkrétní.
+4. Zákaz robotického AI jazyka: Vyhni se slovům jako "klíčový", "transformovat", "vstupte do světa", "navržen tak, aby", "představujeme vám". Piš přirozeně, jako bys mluvila s kamarádkou, ale s odbornou autoritou.
+5. ZÁKAZ ZMÍNĚNÍ NÁZVŮ KOLEKCÍ: V textu NIKDY neuváděj ani nezmiňuj žádné názvy kolekcí (např. Selena, Tina, Olivia, atd.). Tuto informaci do textu nepromítej. Značku prezentujeme jako celek bez pojmenování jednotlivých kolekcí v produktových popiscích.
+
+INFORMACE O STŘIZÍCH TRIOLA (ZNALOSTNÍ BÁZE):
+- Perfect-Fit: Hladká, tence vyztužená podprsenka s kosticemi. Nezvětšuje objem, ale fixuje prsa v ideální výšce. Vhodná pro střední a velké velikosti pod přiléhavé oblečení.
+- T-Fit: Třídílný košíček s T-švem. Dokonale prsa zakulatí, pozvedne a zafixuje na středu. Klasika pro velkou oporu.
+- Top-Fit / Sensual-Fit: Hladká vyztužená podprsenka s nižším středem. Skvělá do hlubokých výstřihů.
+
+PRAVIDLA PRO FORMÁT A ODPOVĚĎ:
+- Vždy odpovídej výhradně ve formátu JSON s přesně definovanými klíči.
+- Nepřidávej žádný vysvětlující text, úvodní kecy ani závěrečné poznámky. Výstupem musí být validní JSON.
+- HTML tagy v popisech musí být čisté a bez chyb (žádné obalové tagy <html>, <body>, apod.).
+- Respektuj zadanou barvu a omez se pouze na ni.
+"""
+
+def generate_batch_row_data(product_info, model_key, tone_key, use_simulation=False):
+    """
+    Generates all 6 required copywriting fields for a batch row:
+    - E-shop Název (eshop_name)
+    - Krátký popis (short_desc)
+    - Triola Eshop popis (eshop_desc1)
+    - Triola Eshop popis 2 (eshop_desc2)
+    - Eshop Meta Title (meta_title)
+    - Eshop Meta Description (meta_desc)
+    
+    If use_simulation is True, returns template-based values.
+    Otherwise, calls the selected LLM to generate them in a single optimized JSON request.
+    """
+    prod_title = product_info.get("generic_title", "Podprsenka Triola")
+    prod_code = product_info.get("model_code", "")
+    prod_colors = ", ".join(product_info.get("all_colors", ["standardní"]))
+    prod_cut = product_info.get("cut_name", "Neznámý střih")
+    prod_char = product_info.get("characteristics", "")
+    prod_benefits = "\\n - " + "\\n - ".join(product_info.get("benefits", [])) if product_info.get("benefits") else ""
+    prod_docx = product_info.get("docx_description", "")
+    prod_recommendation = product_info.get("recommendation", "")
+    
+    # Excel marketing data fields
+    collection = product_info.get("collection", "")
+    sales_arguments = product_info.get("sales_arguments", "")
+    target_group = product_info.get("target_group", "")
+    meta_title_marketing = product_info.get("meta_title", "")
+    meta_desc_marketing = product_info.get("meta_description", "")
+    extra_descriptions = product_info.get("extra_descriptions", "")
+    
+    if use_simulation:
+        # Simulate values
+        is_panties = str(prod_code).startswith('3')
+        product_type = "Kalhotky" if is_panties else "Podprsenka"
+        sim_name = f"{product_type} Triola {prod_code} {prod_cut if prod_cut != 'Neznámý střih' else ''} - {prod_colors}".strip()
+        sim_name = re.sub(r'\s+', ' ', sim_name)
+        
+        sim_short = get_simulated_copywriting(product_info, "kratky_popis_html", tone_key)
+        sim_desc1 = get_simulated_copywriting(product_info, "dlouhy_popis_html", tone_key)
+        
+        sim_desc2 = f"<p>Tento kousek v podmanivé barvě <strong>{prod_colors}</strong> můžete snadno nakombinovat do dokonalé sady s doporučenými kalhotkami Triola stejné barevné řady. Jemné prádlo vyžaduje šetrnou péči, proto doporučujeme prát v pracím sáčku při nízkých teplotách bez aviváže, čímž uchováte elasticitu obvodu a životnost materiálu po dlouhou dobu.</p>"
+        
+        sim_meta_title = f"{product_type} Triola {prod_code} {prod_cut if prod_cut != 'Neznámý střih' else ''} v barvě {prod_colors} | Triola.cz"
+        if len(sim_meta_title) > 60:
+            sim_meta_title = sim_meta_title[:57] + "..."
+            
+        sim_meta_desc = f"Objevte výjimečné pohodlí a skvěle padnoucí střih s modelem {prod_code} v barvě {prod_colors}. Udrží poprsí v ideální výšce. Nakupujte na Triola.cz!"
+        
+        return {
+            "eshop_name": sim_name,
+            "short_desc": sim_short,
+            "eshop_desc1": sim_desc1,
+            "eshop_desc2": sim_desc2,
+            "meta_title": sim_meta_title,
+            "meta_desc": sim_meta_desc
+        }
+        
+    # Build prompt context
+    marketing_block = ""
+    if collection or sales_arguments or target_group or extra_descriptions or meta_title_marketing or meta_desc_marketing:
+        marketing_block = "\\nPODKLADY Z MARKETINGOVÉ TABULKY:\\n"
+        if target_group: 
+            marketing_block += f"- Cílová skupina: {target_group}\\n"
+        if sales_arguments: 
+            marketing_block += f"- Prodejní argumenty: {sales_arguments}\\n"
+        if extra_descriptions: 
+            marketing_block += f"- Doplňující podklady/popisy: {extra_descriptions}\\n"
+        if meta_title_marketing: 
+            marketing_block += f"- Původně doporučený Meta Title: {meta_title_marketing}\\n"
+        if meta_desc_marketing: 
+            marketing_block += f"- Původně doporučený Meta Description: {meta_desc_marketing}\\n"
+            
+    # Format tone instructions
+    tone_instructions = ""
+    if tone_key == "empaticky":
+        tone_instructions = "Tón komunikace: Hluboce empatický, chápavý, povzbuzující a profesionálně stylistický (bra-fitting rady)."
+    elif tone_key == "elegantni":
+        tone_instructions = "Tón komunikace: Elegantní, smyslný, oslavující ženskost a luxusní pocit z nošení."
+    elif tone_key == "moderni":
+        tone_instructions = "Tón komunikace: Moderní, dynamický, svěží a aktivní lifestyle."
+
+    import json
+    model_name = MODEL_MAPPING.get(model_key, model_key)
+    openai_key = os.getenv("OPENAI_API_KEY")
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+    google_key = os.getenv("GOOGLE_API_KEY")
+    
+    user_prompt = f"""Vytvoř kompletní sadu 6 textů a SEO tagů pro produkt značky Triola:
+-----------------
+NÁZEV PRODUKTU: {prod_title}
+KÓD MODELU: {prod_code}
+STŘIH PODPRSENKY: {prod_cut}
+CHARAKTERISTIKA STŘIHU: {prod_char}
+OFICIÁLNÍ KONSTRUKČNÍ SPECIFIKACE STŘIHU: {prod_docx if prod_docx else 'Není k dispozici'}
+KLÍČOVÉ VÝHOWY: {prod_benefits}
+DOPORUČENÉ PRODEJNÍ ARGUMENTY A TIPY STYLISTKY: {prod_recommendation if prod_recommendation else 'Nejsou k dispozici'}
+DOSTUPNÉ BARVY: {prod_colors}
+DŮLEŽITÉ UPOZORNĚNÍ K BARVĚ: Piš výhradně o barvě {prod_colors}. Ignoruj jakékoliv jiné barvy zmíněné v původním popisu produktu nebo v marketingových podkladech.
+DŮLEŽITÉ UPOZORNĚNÍ K NÁZVŮM KOLEKCÍ: V textu NIKDY neuváděj ani nezmiňuj žádné názvy kolekcí (např. Selena, Tina, Olivia, atd.). Pokud se název jakékoliv kolekce objeví v podkladech, zcela ho vynechej.
+-----------------
+{marketing_block}
+-----------------
+
+{tone_instructions}
+
+Vygeneruj validní JSON objekt s následujícími klíči (všechny hodnoty musí být v češtině):
+1. "eshop_name": Atraktivní marketingový a SEO název produktu pro e-shop (např. "Podprsenka Triola 28895 Perfect-Fit - dračí ovoce" nebo "Kalhotky Triola 31234 - dračí ovoce"). Nepoužívej uvozovky. Max 100 znaků.
+2. "short_desc": Krátký popis v jednoduchém HTML. Obsahuje 1 až 2 čtivé, prodejní odstavce (používej pouze tagy <p> a <strong>). Žádné odrážky ani nadpisy.
+3. "eshop_desc1": Dlouhý popis v HTML. Struktura:
+   - Úvodní poutavý odstavec (<p>, <strong>).
+   - Podnadpis <h2> s názvem střihu a popisem chování na těle.
+   - Odrážkový seznam výhod a konstrukčních specifikací (<ul>, <li>). Uvedeš typ kostic, ramínek, obvod atd.
+   - Podnadpis <h3> s doporučením stylistky (bra-fitting tipy, výběr správné velikosti).
+   - Závěrečný odstavec (<p>).
+   (Používej výhradně tagy <p>, <strong>, <ul>, <li>, <h2>, <h3>).
+4. "eshop_desc2": Doplňující popis 2 v HTML. Zaměř se na kombinování do sady s kalhotkami ve stejné barvě, šetrnou péči o prádlo (praní v sáčku, bez aviváže) a složení. 1-2 odstavce (<p>, <strong>).
+5. "meta_title": SEO Meta Title. Délka 50-60 znaků. Musí obsahovat název, kód modelu, typ/střih a zadanou barvu. Atraktivní pro CTR.
+6. "meta_desc": SEO Meta Description. Délka 120-155 znaků. Věcné shrnutí výhod, kód, barva a výzva k akci (CTA) na konci.
+
+Odpověz VÝHRADNĚ ve formátu JSON s touto strukturou:
+{{
+  "eshop_name": "...",
+  "short_desc": "...",
+  "eshop_desc1": "...",
+  "eshop_desc2": "...",
+  "meta_title": "...",
+  "meta_desc": "..."
+}}
+"""
+
+    logging.info(f"Hromadné generování 6 sloupců pro model {prod_code} přes model '{model_name}'...")
+    
+    try:
+        if model_key.startswith("claude"):
+            if not anthropic_key:
+                raise ValueError("Chybí ANTHROPIC_API_KEY v souboru .env.")
+            text = execute_with_retry(generate_with_anthropic, anthropic_key, model_name, BATCH_JSON_SYSTEM_PROMPT, user_prompt)
+            
+        elif model_key.startswith("gpt"):
+            if not openai_key:
+                raise ValueError("Chybí OPENAI_API_KEY v souboru .env.")
+            text = execute_with_retry(generate_with_openai, openai_key, model_name, BATCH_JSON_SYSTEM_PROMPT, user_prompt)
+            
+        elif model_key.startswith("gemini"):
+            if not google_key:
+                raise ValueError("Chybí GOOGLE_API_KEY v souboru .env.")
+            text = execute_with_retry(generate_with_gemini, google_key, model_name, BATCH_JSON_SYSTEM_PROMPT, user_prompt)
+            
+        else:
+            raise ValueError(f"Nepodporovaný typ modelu: {model_key}")
+            
+        text = text.strip()
+        text = re.sub(r'^```(?:json)?\s*', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'\s*```$', '', text)
+        text = text.strip()
+        
+        parsed = json.loads(text)
+        
+        required_keys = ["eshop_name", "short_desc", "eshop_desc1", "eshop_desc2", "meta_title", "meta_desc"]
+        for k in required_keys:
+            if k not in parsed:
+                parsed[k] = ""
+                
+        return parsed
+        
+    except Exception as e:
+        logging.error(f"Chyba při hromadném generování přes LLM pro model {prod_code}: {e}")
+        raise e
+

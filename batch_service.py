@@ -122,6 +122,118 @@ def resolve_color(model_code, color_code, products_db):
     # 2. Fallback to static mapping or raw code
     return expected_color if expected_color else f"kód {color_code}"
 
+def find_header_row_and_mapping(ws):
+    """
+    Prohledá prvních 10 řádků listu a najde ten s nejvyšší shodou klíčových slov.
+    Vrací (header_row_num, col_map) s indexy sloupců (0-based).
+    """
+    col_map = {
+        "code": -1,
+        "cut": -1,
+        "color": -1,
+        "collection": -1,
+        "arguments": -1,
+        "eshop_name": -1,
+        "short_desc": -1,
+        "eshop_desc1": -1,
+        "eshop_desc2": -1,
+        "meta_title": -1,
+        "meta_desc": -1,
+    }
+    
+    best_row = 1
+    best_score = -1
+    best_mapping = {}
+    
+    for r in range(1, 11):
+        row_vals = []
+        for c in range(1, ws.max_column + 1):
+            val = ws.cell(row=r, column=c).value
+            row_vals.append(str(val).strip() if val is not None else "")
+            
+        score = 0
+        current_map = {k: -1 for k in col_map}
+        
+        for idx, val in enumerate(row_vals):
+            val_lower = val.lower()
+            if not val_lower:
+                continue
+                
+            # Code mapping
+            if "fazón" in val_lower or "číslo" in val_lower or "kod" in val_lower or val_lower == "code":
+                if current_map["code"] == -1:
+                    current_map["code"] = idx
+                    score += 5
+            # Arguments mapping
+            elif "argument" in val_lower or "prodejní" in val_lower or "prodejni" in val_lower:
+                if current_map["arguments"] == -1:
+                    current_map["arguments"] = idx
+                    score += 4
+            # Střih mapping
+            elif "střih" in val_lower or "strih" in val_lower:
+                if current_map["cut"] == -1:
+                    current_map["cut"] = idx
+                    score += 2
+            # Color mapping
+            elif "barva" in val_lower or val_lower == "color":
+                if current_map["color"] == -1:
+                    current_map["color"] = idx
+                    score += 2
+            # Collection mapping
+            elif "kolekce" in val_lower or "název kolekce" in val_lower:
+                if current_map["collection"] == -1:
+                    current_map["collection"] = idx
+                    score += 2
+            # Outputs mapping
+            elif "e-shop název" in val_lower or "eshop nazev" in val_lower:
+                if current_map["eshop_name"] == -1:
+                    current_map["eshop_name"] = idx
+                    score += 3
+            elif "krátký popis" in val_lower or "kratky popis" in val_lower:
+                if current_map["short_desc"] == -1:
+                    current_map["short_desc"] = idx
+                    score += 3
+            elif "triola eshop popis 2" in val_lower or "popis 2" in val_lower:
+                if current_map["eshop_desc2"] == -1:
+                    current_map["eshop_desc2"] = idx
+                    score += 3
+            elif "triola eshop popis" in val_lower or "popis 1" in val_lower or "eshop popis" in val_lower:
+                if current_map["eshop_desc1"] == -1:
+                    current_map["eshop_desc1"] = idx
+                    score += 3
+            elif "meta title" in val_lower or "eshop meta title" in val_lower:
+                if current_map["meta_title"] == -1:
+                    current_map["meta_title"] = idx
+                    score += 3
+            elif "meta description" in val_lower or "eshop meta description" in val_lower or "meta desc" in val_lower:
+                if current_map["meta_desc"] == -1:
+                    current_map["meta_desc"] = idx
+                    score += 3
+                    
+        if score > best_score:
+            best_score = score
+            best_row = r
+            best_mapping = current_map
+            
+    # Fallback if code column not identified
+    if best_score <= 0 or best_mapping.get("code", -1) == -1:
+        best_row = 1
+        best_mapping = {
+            "code": 0,
+            "cut": -1,
+            "color": -1,
+            "collection": -1,
+            "arguments": 1,
+            "eshop_name": -1,
+            "short_desc": -1,
+            "eshop_desc1": -1,
+            "eshop_desc2": -1,
+            "meta_title": -1,
+            "meta_desc": -1,
+        }
+        
+    return best_row, best_mapping
+
 def parse_batch_excel(file_path, products_db):
     """
     Parses the uploaded Excel file. Skips empty rows.
@@ -134,34 +246,20 @@ def parse_batch_excel(file_path, products_db):
     wb = openpyxl.load_workbook(file_path, data_only=True)
     ws = wb.active
     
-    # Identify columns
-    fazona_idx = -1
-    arguments_idx = -1
+    header_row, mapping = find_header_row_and_mapping(ws)
+    logging.info(f"Nalezen řádek záhlaví {header_row} s mapováním: {mapping}")
     
-    headers = [str(cell.value).strip().lower() if cell.value is not None else "" for cell in ws[1]]
-    for idx, h in enumerate(headers):
-        if "fazón" in h or "číslo" in h or "kod" in h or h == "code":
-            fazona_idx = idx
-        elif "argument" in h or "prodejní" in h or "prodejni" in h:
-            arguments_idx = idx
-            
-    # Fallback to column index if headers are not matched exactly
-    if fazona_idx == -1:
-        fazona_idx = 0
-    if arguments_idx == -1:
-        arguments_idx = 1
-        
     rows = []
-    # Loop from row 2 (first row is header)
-    for r in range(2, ws.max_row + 1):
-        raw_code = ws.cell(row=r, column=fazona_idx + 1).value
-        args = ws.cell(row=r, column=arguments_idx + 1).value
+    # Loop from row header_row + 1
+    for r in range(header_row + 1, ws.max_row + 1):
+        raw_code = ws.cell(row=r, column=mapping["code"] + 1).value
         
-        if raw_code is None and args is None:
-            continue # Skip blank rows
+        # Check if the code is None
+        if raw_code is None:
+            continue
             
-        code_str = str(raw_code).strip() if raw_code is not None else ""
-        if not code_str:
+        code_str = str(raw_code).strip()
+        if not code_str or code_str == "None":
             continue
             
         # Parse model and color code (e.g. 22859/88)
@@ -169,8 +267,29 @@ def parse_batch_excel(file_path, products_db):
         model_code = parts[0].strip()
         color_code = parts[1].strip() if len(parts) > 1 else ""
         
-        color_name = resolve_color(model_code, color_code, products_db)
+        # Check if there is a separate color column and color_code is not yet parsed
+        color_name_override = None
+        if not color_code and mapping["color"] != -1:
+            raw_color = ws.cell(row=r, column=mapping["color"] + 1).value
+            if raw_color is not None:
+                color_str = str(raw_color).strip()
+                if color_str.isdigit():
+                    color_code = color_str
+                else:
+                    color_code = ""
+                    color_name_override = color_str
         
+        if color_name_override:
+            color_name = color_name_override
+        else:
+            color_name = resolve_color(model_code, color_code, products_db)
+            
+        # Arguments
+        args = ""
+        if mapping["arguments"] != -1:
+            raw_args = ws.cell(row=r, column=mapping["arguments"] + 1).value
+            args = str(raw_args).strip() if raw_args is not None else ""
+            
         # Check if we have the model in products cache
         in_db = model_code in products_db
         
@@ -180,49 +299,86 @@ def parse_batch_excel(file_path, products_db):
             "model_code": model_code,
             "color_code": color_code,
             "color_name": color_name,
-            "arguments": str(args).strip() if args is not None else "",
+            "arguments": args,
             "in_db": in_db
         })
         
     logging.info(f"Získáno {len(rows)} datových řádků k zpracování.")
     return rows
 
-def write_descriptions_to_excel(file_path, row_num, short_html, long_html):
+def write_row_results_to_excel(file_path, row_num, results):
     """
-    Writes the generated descriptions into new columns in the Excel file.
-    Creates column headers if they don't exist yet.
+    Writes the 6 generated copywriting results into Excel columns.
+    If the columns do not exist in the sheet, they are added at the end of the header row.
     """
     wb = openpyxl.load_workbook(file_path)
     ws = wb.active
     
-    # Get current headers
-    headers = [str(cell.value).strip() if cell.value is not None else "" for cell in ws[1]]
+    header_row_idx, mapping = find_header_row_and_mapping(ws)
     
-    short_col_idx = -1
-    long_col_idx = -1
+    # Read current headers from the detected header row
+    headers = [str(ws.cell(row=header_row_idx, column=c).value).strip() if ws.cell(row=header_row_idx, column=c).value is not None else "" for c in range(1, ws.max_column + 1)]
     
-    for idx, h in enumerate(headers):
-        if h == "Krátký popis (HTML)":
-            short_col_idx = idx + 1
-        elif h == "Dlouhý popis (HTML)":
-            long_col_idx = idx + 1
+    col_write_map = {}
+    
+    # Define mapping of result keys to headers we look for or create
+    key_to_headers = {
+        "eshop_name": ["E-SHOP NÁZEV", "Název E-shop", "E-shop název"],
+        "short_desc": ["KRÁTKÝ POPIS", "Krátký popis (HTML)", "Krátký popis"],
+        "eshop_desc1": ["TRIOLA ESHOP POPIS", "Dlouhý popis (HTML)", "Popis 1"],
+        "eshop_desc2": ["TRIOLA ESHOP POPIS 2", "Popis 2"],
+        "meta_title": ["ESHOP META TITLE", "Meta Title", "Meta title"],
+        "meta_desc": ["ESHOP META DESCRIPTION", "Meta Description", "Meta description"]
+    }
+    
+    # Find existing columns (case-insensitive)
+    for key, possible_headers in key_to_headers.items():
+        found_idx = -1
+        
+        # 1. Exact match
+        for idx, h in enumerate(headers):
+            h_lower = h.lower().strip()
+            if any(ph.lower().strip() == h_lower for ph in possible_headers):
+                found_idx = idx + 1
+                break
+                
+        # 2. Substring match
+        if found_idx == -1:
+            for idx, h in enumerate(headers):
+                h_lower = h.lower().strip()
+                if any(ph.lower().strip() in h_lower or h_lower in ph.lower().strip() for ph in possible_headers):
+                    found_idx = idx + 1
+                    break
+                    
+        col_write_map[key] = found_idx
+
+    # If any column is not found, append it to the header row
+    for key, possible_headers in key_to_headers.items():
+        if col_write_map[key] == -1:
+            new_col_idx = len(headers) + 1
+            default_header_name = possible_headers[0]
+            ws.cell(row=header_row_idx, column=new_col_idx, value=default_header_name)
+            headers.append(default_header_name)
+            col_write_map[key] = new_col_idx
             
-    # If columns do not exist, create them
-    if short_col_idx == -1:
-        short_col_idx = len(headers) + 1
-        ws.cell(row=1, column=short_col_idx, value="Krátký popis (HTML)")
-        headers.append("Krátký popis (HTML)")
-        
-    if long_col_idx == -1:
-        long_col_idx = len(headers) + 1
-        ws.cell(row=1, column=long_col_idx, value="Dlouhý popis (HTML)")
-        
     # Write values
-    ws.cell(row=row_num, column=short_col_idx, value=short_html)
-    ws.cell(row=row_num, column=long_col_idx, value=long_html)
-    
+    for key, val in results.items():
+        if key in col_write_map and col_write_map[key] != -1:
+            col_idx = col_write_map[key]
+            ws.cell(row=row_num, column=col_idx, value=val)
+        
     wb.save(file_path)
-    logging.info(f"Zapsány HTML popisky na řádek {row_num} v {file_path}")
+    logging.info(f"Zapsáno 6 sloupců výsledků na řádek {row_num} v {file_path}")
+
+def write_descriptions_to_excel(file_path, row_num, short_html, long_html):
+    """
+    Wrapper for backward compatibility.
+    """
+    results = {
+        "short_desc": short_html,
+        "eshop_desc1": long_html
+    }
+    write_row_results_to_excel(file_path, row_num, results)
 
 def normalize_header(h):
     if not h:

@@ -1082,12 +1082,24 @@ document.addEventListener('DOMContentLoaded', () => {
                         const previewBtn = document.getElementById(`preview-btn-${row.row_num}`);
                         if (previewBtn) {
                             previewBtn.disabled = false;
-                            previewBtn.setAttribute('data-short-html', data.short_desc);
-                            previewBtn.setAttribute('data-long-html', data.long_desc);
+                            previewBtn.setAttribute('data-eshop-name', data.eshop_name || '');
+                            previewBtn.setAttribute('data-short-html', data.short_desc || '');
+                            previewBtn.setAttribute('data-long-html', data.long_desc || '');
+                            previewBtn.setAttribute('data-desc2-html', data.eshop_desc2 || '');
+                            previewBtn.setAttribute('data-meta-title', data.meta_title || '');
+                            previewBtn.setAttribute('data-meta-desc', data.meta_desc || '');
                             previewBtn.setAttribute('data-code', row.raw_code);
                             
                             previewBtn.onclick = () => {
-                                showBatchPreview(row.raw_code, data.short_desc, data.long_desc);
+                                showBatchPreview(
+                                    row.raw_code,
+                                    data.eshop_name || '',
+                                    data.short_desc || '',
+                                    data.long_desc || '',
+                                    data.eshop_desc2 || '',
+                                    data.meta_title || '',
+                                    data.meta_desc || ''
+                                );
                             };
                         }
                     } else {
@@ -1134,14 +1146,58 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Preview modal handlers
-    function showBatchPreview(code, shortHtml, longHtml) {
+    function showBatchPreview(code, eshopName, shortHtml, longHtml, desc2Html, metaTitle, metaDesc) {
         if (batchPreviewTitle) batchPreviewTitle.textContent = `Náhled popisků pro model: ${code}`;
         
+        // E-shop Název
+        const eshopNameEl = document.getElementById('batch-preview-eshop-name');
+        if (eshopNameEl) eshopNameEl.textContent = eshopName || 'Nevytvořeno';
+        
+        // Krátký popis
         if (batchPreviewShortCode) batchPreviewShortCode.textContent = shortHtml;
         if (batchPreviewShortRender) batchPreviewShortRender.innerHTML = shortHtml;
         
+        // Dlouhý popis
         if (batchPreviewLongCode) batchPreviewLongCode.textContent = longHtml;
         if (batchPreviewLongRender) batchPreviewLongRender.innerHTML = longHtml;
+        
+        // Popis 2
+        const desc2CodeEl = document.getElementById('batch-preview-desc2-code');
+        const desc2RenderEl = document.getElementById('batch-preview-desc2-render');
+        if (desc2CodeEl) desc2CodeEl.textContent = desc2Html || '';
+        if (desc2RenderEl) desc2RenderEl.innerHTML = desc2Html || '<em>Popis 2 nebyl vygenerován.</em>';
+        
+        // Meta Title
+        const metaTitleEl = document.getElementById('batch-preview-meta-title');
+        const titleCounterEl = document.getElementById('batch-preview-title-counter');
+        if (metaTitleEl) metaTitleEl.textContent = metaTitle || '';
+        if (titleCounterEl) {
+            const len = (metaTitle || '').length;
+            titleCounterEl.textContent = `${len} znaků`;
+            if (len >= 50 && len <= 60) {
+                titleCounterEl.style.backgroundColor = '#10B981'; // Green
+                titleCounterEl.style.color = 'white';
+            } else {
+                titleCounterEl.style.backgroundColor = '#EF4444'; // Red
+                titleCounterEl.style.color = 'white';
+            }
+        }
+        
+        // Meta Description
+        const metaDescEl = document.getElementById('batch-preview-meta-desc');
+        const descCounterEl = document.getElementById('batch-preview-desc-counter');
+        if (metaDescEl) metaDescEl.textContent = metaDesc || '';
+        if (descCounterEl) {
+            const len = (metaDesc || '').length;
+            descCounterEl.textContent = `${len} znaků`;
+            if (len >= 120 && len <= 155) {
+                descCounterEl.style.backgroundColor = '#10B981'; // Green
+                descCounterEl.style.color = 'white';
+            } else {
+                descCounterEl.style.backgroundColor = '#EF4444'; // Red
+                descCounterEl.style.color = 'white';
+            }
+        }
         
         if (batchPreviewModal) batchPreviewModal.style.display = 'flex';
     }

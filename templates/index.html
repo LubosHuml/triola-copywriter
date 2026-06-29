@@ -850,16 +850,62 @@
                 </button>
             </div>
             <div class="batch-preview-body" style="padding: 20px 0;">
-                <div class="preview-section">
-                    <h3 style="margin-bottom: 10px; color: var(--primary);">Krátký popis (HTML kód pro ERP)</h3>
-                    <div style="background-color: var(--bg-light); padding: 10px; border-radius: 4px; font-family: monospace; font-size: 13px; max-height: 120px; overflow-y: auto; border: 1px solid var(--border-color); white-space: pre-wrap; margin-bottom: 10px;" id="batch-preview-short-code"></div>
-                    <div style="border: 1px dashed var(--border-color); padding: 15px; border-radius: 4px;" id="batch-preview-short-render"></div>
+                <!-- E-SHOP NÁZEV -->
+                <div class="preview-section" style="margin-bottom: 20px;">
+                    <h3 style="margin-bottom: 8px; color: var(--primary);">E-SHOP NÁZEV</h3>
+                    <div style="background-color: var(--bg-light); padding: 12px; border-radius: 4px; font-weight: bold; border: 1px solid var(--border-color);" id="batch-preview-eshop-name"></div>
                 </div>
-                <hr style="margin: 25px 0; border: 0; border-top: 1px solid var(--border-color);">
+                
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-color);">
+                
+                <!-- KRÁTKÝ POPIS -->
                 <div class="preview-section">
-                    <h3 style="margin-bottom: 10px; color: var(--primary);">Dlouhý popis (HTML kód pro ERP)</h3>
-                    <div style="background-color: var(--bg-light); padding: 10px; border-radius: 4px; font-family: monospace; font-size: 13px; max-height: 180px; overflow-y: auto; border: 1px solid var(--border-color); white-space: pre-wrap; margin-bottom: 10px;" id="batch-preview-long-code"></div>
-                    <div style="border: 1px dashed var(--border-color); padding: 15px; border-radius: 4px;" id="batch-preview-long-render"></div>
+                    <h3 style="margin-bottom: 8px; color: var(--primary);">KRÁTKÝ POPIS (HTML pro ERP)</h3>
+                    <div style="background-color: var(--bg-light); padding: 10px; border-radius: 4px; font-family: monospace; font-size: 13px; max-height: 100px; overflow-y: auto; border: 1px solid var(--border-color); white-space: pre-wrap; margin-bottom: 10px;" id="batch-preview-short-code"></div>
+                    <div style="border: 1px dashed var(--border-color); padding: 15px; border-radius: 4px; background: white;" id="batch-preview-short-render"></div>
+                </div>
+                
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-color);">
+                
+                <!-- TRIOLA ESHOP POPIS -->
+                <div class="preview-section">
+                    <h3 style="margin-bottom: 8px; color: var(--primary);">TRIOLA ESHOP POPIS (Hlavní dlouhý popis)</h3>
+                    <div style="background-color: var(--bg-light); padding: 10px; border-radius: 4px; font-family: monospace; font-size: 13px; max-height: 150px; overflow-y: auto; border: 1px solid var(--border-color); white-space: pre-wrap; margin-bottom: 10px;" id="batch-preview-long-code"></div>
+                    <div style="border: 1px dashed var(--border-color); padding: 15px; border-radius: 4px; background: white;" id="batch-preview-long-render"></div>
+                </div>
+                
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-color);">
+                
+                <!-- TRIOLA ESHOP POPIS 2 -->
+                <div class="preview-section">
+                    <h3 style="margin-bottom: 8px; color: var(--primary);">TRIOLA ESHOP POPIS 2 (Doplňující popis, sady a údržba)</h3>
+                    <div style="background-color: var(--bg-light); padding: 10px; border-radius: 4px; font-family: monospace; font-size: 13px; max-height: 100px; overflow-y: auto; border: 1px solid var(--border-color); white-space: pre-wrap; margin-bottom: 10px;" id="batch-preview-desc2-code"></div>
+                    <div style="border: 1px dashed var(--border-color); padding: 15px; border-radius: 4px; background: white;" id="batch-preview-desc2-render"></div>
+                </div>
+                
+                <hr style="margin: 20px 0; border: 0; border-top: 1px solid var(--border-color);">
+                
+                <!-- SEO META TAGY -->
+                <div class="preview-section">
+                    <h3 style="margin-bottom: 15px; color: var(--primary);">SEO META TAGY</h3>
+                    
+                    <!-- Meta Title -->
+                    <div style="margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <strong style="font-size: 14px;">ESHOP META TITLE</strong>
+                            <span id="batch-preview-title-counter" style="font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 3px;">0 znaků</span>
+                        </div>
+                        <div style="background-color: var(--bg-light); padding: 10px; border-radius: 4px; border: 1px solid var(--border-color); font-family: inherit; font-size: 14px;" id="batch-preview-meta-title"></div>
+                    </div>
+                    
+                    <!-- Meta Description -->
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <strong style="font-size: 14px;">ESHOP META DESCRIPTION</strong>
+                            <span id="batch-preview-desc-counter" style="font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 3px;">0 znaků</span>
+                        </div>
+                        <div style="background-color: var(--bg-light); padding: 10px; border-radius: 4px; border: 1px solid var(--border-color); font-family: inherit; font-size: 14px; line-height: 1.4;" id="batch-preview-meta-desc"></div>
+                    </div>
                 </div>
             </div>
         </div>

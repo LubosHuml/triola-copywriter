@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import feed_parser
 import sheet_parser
 import batch_service
-from ai_service import generate_copywriting, get_simulated_copywriting, generate_seo_snippet, MODEL_MAPPING
+from ai_service import generate_copywriting, get_simulated_copywriting, generate_seo_snippet, MODEL_MAPPING, generate_batch_row_data
 
 load_dotenv()
 
@@ -284,39 +284,27 @@ def batch_process_row():
             "sales_arguments": arguments
         }
         
-    # 2. Perform copywriting generation for short and long description
+    # 2. Perform copywriting generation for all 6 columns in one single call
     try:
-        if use_simulation:
-            short_desc = get_simulated_copywriting(product_info, "kratky_popis_html", tone_key)
-            long_desc = get_simulated_copywriting(product_info, "dlouhy_popis_html", tone_key)
-        else:
-            short_desc = generate_copywriting(
-                product_info=product_info,
-                format_type="kratky_popis_html",
-                model_key=model_key,
-                tone_key=tone_key,
-                length_key="kratky",
-                keywords="",
-                custom_instructions=""
-            )
-            long_desc = generate_copywriting(
-                product_info=product_info,
-                format_type="dlouhy_popis_html",
-                model_key=model_key,
-                tone_key=tone_key,
-                length_key="dlouhy",
-                keywords="",
-                custom_instructions=""
-            )
-            
+        results = generate_batch_row_data(
+            product_info=product_info,
+            model_key=model_key,
+            tone_key=tone_key,
+            use_simulation=use_simulation
+        )
+        
         # 3. Write back to excel
-        batch_service.write_descriptions_to_excel(file_path, row_num, short_desc, long_desc)
+        batch_service.write_row_results_to_excel(file_path, row_num, results)
         
         return jsonify({
             "success": True,
             "row_num": row_num,
-            "short_desc": short_desc,
-            "long_desc": long_desc
+            "eshop_name": results.get("eshop_name", ""),
+            "short_desc": results.get("short_desc", ""),
+            "long_desc": results.get("eshop_desc1", ""),
+            "eshop_desc2": results.get("eshop_desc2", ""),
+            "meta_title": results.get("meta_title", ""),
+            "meta_desc": results.get("meta_desc", "")
         })
     except Exception as e:
         logging.error(f"Chyba při zpracování řádku {row_num}: {e}")
