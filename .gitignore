@@ -20,3 +20,10 @@ uploads/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local scratch experiments
+scratch/
+scratch_*
+*.png
+*.jpg
+*.webp

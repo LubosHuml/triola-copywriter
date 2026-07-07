@@ -262,7 +262,7 @@ def generate_copywriting(product_info, format_type, model_key, tone_key, length_
     prod_colors = ", ".join(product_info.get("all_colors", ["standardní"]))
     prod_cut = product_info.get("cut_name", "Neznámý střih")
     prod_char = product_info.get("characteristics", "")
-    prod_benefits = "\\n - " + "\\n - ".join(product_info.get("benefits", [])) if product_info.get("benefits") else ""
+    prod_benefits = "\n - " + "\n - ".join(product_info.get("benefits", [])) if product_info.get("benefits") else ""
     prod_price = product_info.get("base_price", "")
     prod_desc = product_info.get("combined_description", "")
     prod_docx = product_info.get("docx_description", "")
@@ -407,8 +407,8 @@ Pro zaručení 100% funkčnosti podprsenky je nejdůležitější zvolit správn
 
     if format_type == "socialni_site":
         return f"""### 📱 Příspěvek 1 (Pohodlí a emoce)
-Hledáte podprsenku, která spolehlivě unese i větší poprsí a uleví vašim zádům? 🤍 
-Představujeme vám model **{prod_title}** se střihem **{prod_cut}**! Hladká ramínka a jemný materiál se postarají o vaše celodenní pohodlí, zatímco precizní střih vytvoří krásný dekolt. 
+Hledáte podprsenku, která spolehlivě unese i větší poprsí a uleví vašim zádům? 🤍
+Model **{prod_title}** se střihem **{prod_cut}** je tu přesně pro vás! Hladká ramínka a jemný materiál se postarají o vaše celodenní pohodlí, zatímco precizní střih vytvoří krásný dekolt. 
 Užijte si den bez nepříjemného tlačení! 🌸
 👉 Odkaz v bio.
 #triolacz #pohodli #sebevedomi #ceskaznacka
@@ -567,7 +567,7 @@ def generate_batch_row_data(product_info, model_key, tone_key, use_simulation=Fa
     prod_colors = ", ".join(product_info.get("all_colors", ["standardní"]))
     prod_cut = product_info.get("cut_name", "Neznámý střih")
     prod_char = product_info.get("characteristics", "")
-    prod_benefits = "\\n - " + "\\n - ".join(product_info.get("benefits", [])) if product_info.get("benefits") else ""
+    prod_benefits = "\n - " + "\n - ".join(product_info.get("benefits", [])) if product_info.get("benefits") else ""
     prod_docx = product_info.get("docx_description", "")
     prod_recommendation = product_info.get("recommendation", "")
     
@@ -609,17 +609,17 @@ def generate_batch_row_data(product_info, model_key, tone_key, use_simulation=Fa
     # Build prompt context
     marketing_block = ""
     if collection or sales_arguments or target_group or extra_descriptions or meta_title_marketing or meta_desc_marketing:
-        marketing_block = "\\nPODKLADY Z MARKETINGOVÉ TABULKY:\\n"
-        if target_group: 
-            marketing_block += f"- Cílová skupina: {target_group}\\n"
-        if sales_arguments: 
-            marketing_block += f"- Prodejní argumenty: {sales_arguments}\\n"
-        if extra_descriptions: 
-            marketing_block += f"- Doplňující podklady/popisy: {extra_descriptions}\\n"
-        if meta_title_marketing: 
-            marketing_block += f"- Původně doporučený Meta Title: {meta_title_marketing}\\n"
-        if meta_desc_marketing: 
-            marketing_block += f"- Původně doporučený Meta Description: {meta_desc_marketing}\\n"
+        marketing_block = "\nPODKLADY Z MARKETINGOVÉ TABULKY:\n"
+        if target_group:
+            marketing_block += f"- Cílová skupina: {target_group}\n"
+        if sales_arguments:
+            marketing_block += f"- Prodejní argumenty: {sales_arguments}\n"
+        if extra_descriptions:
+            marketing_block += f"- Doplňující podklady/popisy: {extra_descriptions}\n"
+        if meta_title_marketing:
+            marketing_block += f"- Původně doporučený Meta Title: {meta_title_marketing}\n"
+        if meta_desc_marketing:
+            marketing_block += f"- Původně doporučený Meta Description: {meta_desc_marketing}\n"
             
     # Format tone instructions
     tone_instructions = ""
@@ -643,7 +643,7 @@ KÓD MODELU: {prod_code}
 STŘIH PODPRSENKY: {prod_cut}
 CHARAKTERISTIKA STŘIHU: {prod_char}
 OFICIÁLNÍ KONSTRUKČNÍ SPECIFIKACE STŘIHU: {prod_docx if prod_docx else 'Není k dispozici'}
-KLÍČOVÉ VÝHOWY: {prod_benefits}
+KLÍČOVÉ VÝHODY: {prod_benefits}
 DOPORUČENÉ PRODEJNÍ ARGUMENTY A TIPY STYLISTKY: {prod_recommendation if prod_recommendation else 'Nejsou k dispozici'}
 DOSTUPNÉ BARVY: {prod_colors}
 DŮLEŽITÉ UPOZORNĚNÍ K BARVĚ: Piš výhradně o barvě {prod_colors}. Ignoruj jakékoliv jiné barvy zmíněné v původním popisu produktu nebo v marketingových podkladech.
@@ -664,8 +664,8 @@ Vygeneruj validní JSON objekt s následujícími klíči (všechny hodnoty mus�
    - Podnadpis <h3> s doporučením stylistky (bra-fitting tipy, výběr správné velikosti).
    - Závěrečný odstavec (<p>).
    (Používej výhradně tagy <p>, <strong>, <ul>, <li>, <h2>, <h3>).
-4. "eshop_desc2": Doplňující popis 2 v HTML. Zaměř se na kombinování do sady s kalhotkami ve stejné barvě, šetrnou péči o prádlo (praní v sáčku, bez aviváže) a složení. 1-2 odstavce (<p>, <strong>).
-5. "meta_title": SEO Meta Title. Délka 50-60 znaků. Musí obsahovat název, kód modelu, typ/střih a zadanou barvu. Atraktivní pro CTR.
+4. "eshop_desc2": Doplňující popis 2 v HTML. Zaměř se na kombinování do sady ve stejné barvě (u podprsenky doporuč kalhotky stejné řady, u kalhotek naopak podprsenku), šetrnou péči o prádlo (praní v sáčku, bez aviváže) a složení. 1-2 odstavce (<p>, <strong>).
+5. "meta_title": SEO Meta Title. Délka 50-60 znaků (tvrdý limit, nepřekračuj). Priorita obsahu: typ produktu + kód modelu + barva; název střihu přidej jen, pokud se vejde do limitu. Atraktivní pro CTR.
 6. "meta_desc": SEO Meta Description. Délka 120-155 znaků. Věcné shrnutí výhod, kód, barva a výzva k akci (CTA) na konci.
 
 Odpověz VÝHRADNĚ ve formátu JSON s touto strukturou:
