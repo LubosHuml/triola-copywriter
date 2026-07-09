@@ -356,10 +356,10 @@ Pravidla pro výhody:
     user_prompt = f"Zde je text stránky:\n\n{text}\n\nVytáhni USP:"
 
     try:
-        from ai_service import execute_with_retry, generate_with_openai, generate_with_anthropic, generate_with_gemini
+        from ai_service import execute_with_retry, generate_with_openai, generate_with_anthropic_fallback, generate_with_gemini
         
         if anthropic_key:
-            return execute_with_retry(generate_with_anthropic, anthropic_key, "claude-sonnet-5", system_prompt, user_prompt).strip()
+            return execute_with_retry(generate_with_anthropic_fallback, anthropic_key, "claude-sonnet-5", system_prompt, user_prompt).strip()
         elif openai_key:
             return execute_with_retry(generate_with_openai, openai_key, "gpt-4o-mini", system_prompt, user_prompt).strip()
         elif google_key:

@@ -245,6 +245,22 @@ def generate_with_gemini(api_key, model, system_prompt, user_prompt):
     )
     return response.text
 
+FALLBACK_CLAUDE_MODEL = "claude-sonnet-4-6"
+
+def generate_with_anthropic_fallback(api_key, model, system_prompt, user_prompt):
+    """Zavolá Anthropic API; pokud zadaný model není na klíči dostupný (404 not_found),
+    automaticky přepne na záložní model, aby hromadné generování nespadlo."""
+    try:
+        return generate_with_anthropic(api_key, model, system_prompt, user_prompt)
+    except Exception as e:
+        msg = str(e).lower()
+        model_missing = ("not_found" in msg or "not found" in msg or "404" in msg)
+        if model_missing and model != FALLBACK_CLAUDE_MODEL:
+            logging.warning(f"Model '{model}' není na API klíči dostupný ({e}). Přepínám na záložní '{FALLBACK_CLAUDE_MODEL}'.")
+            return generate_with_anthropic(api_key, FALLBACK_CLAUDE_MODEL, system_prompt, user_prompt)
+        raise
+
+
 def generate_copywriting(product_info, format_type, model_key, tone_key, length_key, keywords="", custom_instructions=""):
     """
     Generates copywriting based on product data, format, selected model and configurations.
@@ -352,7 +368,7 @@ Napiš pouze samotný výsledný text v češtině, nepoužívej žádný úvodn
         if model_key.startswith("claude"):
             if not anthropic_key:
                 raise ValueError("Chybí ANTHROPIC_API_KEY v souboru .env.")
-            text = execute_with_retry(generate_with_anthropic, anthropic_key, model_name, TRIOLA_SYSTEM_PROMPT, user_prompt)
+            text = execute_with_retry(generate_with_anthropic_fallback, anthropic_key, model_name, TRIOLA_SYSTEM_PROMPT, user_prompt)
             
         elif model_key.startswith("gpt"):
             if not openai_key:
@@ -497,7 +513,7 @@ def generate_seo_snippet(data, model_key="claude-sonnet-5"):
         if model_key.startswith("claude"):
             if not anthropic_key:
                 raise ValueError("Chybí ANTHROPIC_API_KEY v souboru .env.")
-            text = execute_with_retry(generate_with_anthropic, anthropic_key, model_name, SEO_SYSTEM_PROMPT, user_prompt)
+            text = execute_with_retry(generate_with_anthropic_fallback, anthropic_key, model_name, SEO_SYSTEM_PROMPT, user_prompt)
             
         elif model_key.startswith("gpt"):
             if not openai_key:
@@ -686,7 +702,7 @@ Odpověz VÝHRADNĚ ve formátu JSON s touto strukturou:
         if model_key.startswith("claude"):
             if not anthropic_key:
                 raise ValueError("Chybí ANTHROPIC_API_KEY v souboru .env.")
-            text = execute_with_retry(generate_with_anthropic, anthropic_key, model_name, BATCH_JSON_SYSTEM_PROMPT, user_prompt)
+            text = execute_with_retry(generate_with_anthropic_fallback, anthropic_key, model_name, BATCH_JSON_SYSTEM_PROMPT, user_prompt)
             
         elif model_key.startswith("gpt"):
             if not openai_key:
