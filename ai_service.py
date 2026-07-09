@@ -657,12 +657,12 @@ DŮLEŽITÉ UPOZORNĚNÍ K NÁZVŮM KOLEKCÍ: V textu NIKDY neuváděj ani nezmi
 Vygeneruj validní JSON objekt s následujícími klíči (všechny hodnoty musí být v češtině):
 1. "eshop_name": Atraktivní marketingový a SEO název produktu pro e-shop (např. "Podprsenka Triola 28895 Perfect-Fit - dračí ovoce" nebo "Kalhotky Triola 31234 - dračí ovoce"). Nepoužívej uvozovky. Max 100 znaků.
 2. "short_desc": Krátký popis v jednoduchém HTML. Obsahuje 1 až 2 čtivé, prodejní odstavce (používej pouze tagy <p> a <strong>). Žádné odrážky ani nadpisy.
-3. "eshop_desc1": Dlouhý popis v HTML. Struktura:
-   - Úvodní poutavý odstavec (<p>, <strong>).
+3. "eshop_desc1": Hlavní popis v HTML. DÉLKA: stručný text, celkem 150–250 slov (250 slov je tvrdý maximální limit — žádná vata, každá věta musí nést informaci). Struktura:
+   - Úvodní poutavý odstavec (<p>, <strong>) — 2 až 3 věty.
    - Podnadpis <h2> s názvem střihu a popisem chování na těle.
-   - Odrážkový seznam výhod a konstrukčních specifikací (<ul>, <li>). Uvedeš typ kostic, ramínek, obvod atd.
-   - Podnadpis <h3> s doporučením stylistky (bra-fitting tipy, výběr správné velikosti).
-   - Závěrečný odstavec (<p>).
+   - Odrážkový seznam výhod a konstrukčních specifikací (<ul>, <li>) — 4 až 5 stručných odrážek. Uvedeš typ kostic, ramínek, obvod atd.
+   - Podnadpis <h3> s doporučením stylistky (bra-fitting tip, výběr správné velikosti) — 1 až 2 věty.
+   - Závěrečný odstavec (<p>) — 1 věta.
    (Používej výhradně tagy <p>, <strong>, <ul>, <li>, <h2>, <h3>).
 4. "eshop_desc2": Doplňující popis 2 v HTML. Zaměř se na kombinování do sady ve stejné barvě (u podprsenky doporuč kalhotky stejné řady, u kalhotek naopak podprsenku), šetrnou péči o prádlo (praní v sáčku, bez aviváže) a složení. 1-2 odstavce (<p>, <strong>).
 5. "meta_title": SEO Meta Title. Délka 50-60 znaků (tvrdý limit, nepřekračuj). Priorita obsahu: typ produktu + kód modelu + barva; název střihu přidej jen, pokud se vejde do limitu. Atraktivní pro CTR.
