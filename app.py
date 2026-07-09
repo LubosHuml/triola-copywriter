@@ -103,7 +103,7 @@ def generate():
     data = request.json or {}
     product_code = data.get('product_code', '')
     format_type = data.get('format_type', 'popisek')
-    model_key = data.get('model_key', 'claude-sonnet-4-6')
+    model_key = data.get('model_key', 'claude-sonnet-5')
     tone_key = data.get('tone_key', 'empaticky')
     length_key = data.get('length_key', 'stredni')
     keywords = data.get('keywords', '')
@@ -247,7 +247,7 @@ def batch_process_row():
     model_code = data.get('model_code', '')
     color_name = data.get('color_name', '')
     arguments = data.get('arguments', '')
-    model_key = data.get('model_key', 'claude-sonnet-4-6')
+    model_key = data.get('model_key', 'claude-sonnet-5')
     tone_key = data.get('tone_key', 'empaticky')
     use_simulation = data.get('use_simulation', False)
     
@@ -322,7 +322,7 @@ def batch_download(filename):
 def seo_generate_single():
     """Generates an SEO snippet for a single page manually."""
     data = request.json or {}
-    model_key = data.get('model_key', 'claude-sonnet-4-6')
+    model_key = data.get('model_key', 'claude-sonnet-5')
     try:
         result = generate_seo_snippet(data, model_key)
         return jsonify({
@@ -359,7 +359,7 @@ Pravidla pro výhody:
         from ai_service import execute_with_retry, generate_with_openai, generate_with_anthropic, generate_with_gemini
         
         if anthropic_key:
-            return execute_with_retry(generate_with_anthropic, anthropic_key, "claude-sonnet-4-6", system_prompt, user_prompt).strip()
+            return execute_with_retry(generate_with_anthropic, anthropic_key, "claude-sonnet-5", system_prompt, user_prompt).strip()
         elif openai_key:
             return execute_with_retry(generate_with_openai, openai_key, "gpt-4o-mini", system_prompt, user_prompt).strip()
         elif google_key:
@@ -503,7 +503,7 @@ def seo_process_row():
     data = request.json or {}
     filename = data.get('filename', '')
     row_num = data.get('row_num')
-    model_key = data.get('model_key', 'claude-sonnet-4-6')
+    model_key = data.get('model_key', 'claude-sonnet-5')
     
     if not filename or row_num is None:
         return jsonify({"success": False, "error": "Chybí povinné parametry (filename nebo row_num)."}), 400

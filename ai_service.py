@@ -16,6 +16,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # Default active model IDs based on verification
 MODEL_MAPPING = {
     # Anthropic
+    "claude-sonnet-5": "claude-sonnet-5",
     "claude-sonnet-4-6": "claude-sonnet-4-6",
     "claude-opus-4-8": "claude-opus-4-8",
     "claude-sonnet-4-5": "claude-sonnet-4-5-20250929",
@@ -463,7 +464,7 @@ def parse_robust_json(text, expected_keys):
                 parsed[key] = ""
     return parsed
 
-def generate_seo_snippet(data, model_key="claude-sonnet-4-6"):
+def generate_seo_snippet(data, model_key="claude-sonnet-5"):
     """
     Generates an SEO snippet (title, description, H1) based on intent and USP.
     """

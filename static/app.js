@@ -1034,7 +1034,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             let processed = 0;
             const total = batchRows.length;
-            const model_key = batchModelSelect ? batchModelSelect.value : 'claude-sonnet-4-6';
+            const model_key = batchModelSelect ? batchModelSelect.value : 'claude-sonnet-5';
             const tone_key = batchToneSelect ? batchToneSelect.value : 'empaticky';
             const use_simulation = batchSimulateCheckbox ? batchSimulateCheckbox.checked : false;
 
