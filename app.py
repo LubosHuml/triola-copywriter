@@ -247,6 +247,9 @@ def batch_process_row():
     model_code = data.get('model_code', '')
     color_name = data.get('color_name', '')
     arguments = data.get('arguments', '')
+    product_name = data.get('product_name', '').strip()
+    material = data.get('material', '').strip()
+    size = data.get('size', '').strip()
     model_key = data.get('model_key', 'claude-sonnet-5')
     tone_key = data.get('tone_key', 'empaticky')
     use_simulation = data.get('use_simulation', False)
@@ -267,22 +270,48 @@ def batch_process_row():
         if arguments:
             product_info["sales_arguments"] = arguments
     else:
-        # Build stub for missing product
-        cut_data = feed_parser.detect_cut_properties(model_code, f"Podprsenka Triola {model_code}", "")
-        product_info = {
-            "model_code": model_code,
-            "generic_title": f"Podprsenka Triola {model_code}" if not model_code.startswith('3') else f"Kalhotky Triola {model_code}",
-            "brand": "Triola",
-            "type": "Dámské spodní prádlo" if not model_code.startswith('3') else "Dámské kalhotky",
-            "cut_name": cut_data["cut_name"],
-            "characteristics": cut_data["characteristics"],
-            "benefits": cut_data["benefits"],
-            "docx_description": cut_data.get("docx_description", ""),
-            "recommendation": cut_data.get("recommendation", ""),
-            "all_colors": [color_name] if color_name else ["standardní"],
-            "combined_description": "",
-            "sales_arguments": arguments
-        }
+        # Build stub for missing product.
+        # Pokud Excel obsahuje nazev produktu (napr. "Osuška", "Župan"), pouzij ho -
+        # ne kazdy produkt je podprsenka a strihova detekce prádla by AI zmatla.
+        lingerie_words = ("podprsenk", "kalhotk", "prádlo", "pradlo", "body", "korzet", "podvazk", "kosilka", "košilka", "plavky", "braletka", "bralet")
+        is_lingerie = (not product_name) or any(w in product_name.lower() for w in lingerie_words)
+
+        if product_name and not is_lingerie:
+            # Obecny produkt (osuska, zupan, doplnek...) - zadna podprsenkova terminologie
+            details = [d for d in [f"Materiál: {material}" if material else "", f"Velikost: {size}" if size else ""] if d]
+            product_info = {
+                "model_code": model_code,
+                "generic_title": f"{product_name.strip().capitalize()} Triola {model_code}",
+                "brand": "Triola",
+                "type": product_name.strip().capitalize(),
+                "cut_name": product_name.strip().capitalize(),
+                "characteristics": ". ".join(details) if details else f"{product_name.strip().capitalize()} značky Triola.",
+                "benefits": [d for d in details] or [],
+                "docx_description": "",
+                "recommendation": "Piš věcně o tomto typu produktu. NEPOUŽÍVEJ terminologii spodního prádla (košíčky, kostice, ramínka, obvod). Vycházej z materiálu, velikosti a prodejních argumentů.",
+                "all_colors": [color_name] if color_name else ["standardní"],
+                "combined_description": "",
+                "sales_arguments": arguments
+            }
+        else:
+            cut_data = feed_parser.detect_cut_properties(model_code, f"Podprsenka Triola {model_code}", "")
+            base_name = product_name.strip().capitalize() if product_name else ("Podprsenka" if not model_code.startswith('3') else "Kalhotky")
+            product_info = {
+                "model_code": model_code,
+                "generic_title": f"{base_name} Triola {model_code}",
+                "brand": "Triola",
+                "type": "Dámské spodní prádlo" if not model_code.startswith('3') else "Dámské kalhotky",
+                "cut_name": cut_data["cut_name"],
+                "characteristics": cut_data["characteristics"],
+                "benefits": cut_data["benefits"],
+                "docx_description": cut_data.get("docx_description", ""),
+                "recommendation": cut_data.get("recommendation", ""),
+                "all_colors": [color_name] if color_name else ["standardní"],
+                "combined_description": "",
+                "sales_arguments": arguments
+            }
+        if material and "Materiál" not in str(product_info.get("characteristics", "")):
+            product_info["characteristics"] = (str(product_info.get("characteristics", "")) + f" Materiál: {material}.").strip()
         
     # 2. Perform copywriting generation for all 6 columns in one single call
     try:

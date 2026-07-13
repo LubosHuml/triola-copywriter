@@ -340,8 +340,8 @@ Níže jsou uvedeny specifikace produktu, pro který máš napsat text:
 -----------------
 NÁZEV PRODUKTU: {prod_title}
 KÓD MODELU: {prod_code}
-STŘIH PODPRSENKY: {prod_cut}
-CHARAKTERISTIKA STŘIHU: {prod_char}
+STŘIH / TYP PRODUKTU: {prod_cut}
+CHARAKTERISTIKA: {prod_char}
 OFICIÁLNÍ KONSTRUKČNÍ SPECIFIKACE STŘIHU (z Wordu): {prod_docx if prod_docx else 'Není specifikováno'}
 KLÍČOVÉ VÝHODY: {prod_benefits}
 DOPORUČENÉ PRODEJNÍ ARGUMENTY A TIPY STYLISTKY: {prod_recommendation if prod_recommendation else 'Nejsou specifikovány'}
@@ -546,6 +546,7 @@ def generate_seo_snippet(data, model_key="claude-sonnet-5"):
 
 BATCH_JSON_SYSTEM_PROMPT = """Jsi špičková česká copywriterka a specialistka na spodní prádlo (podprsenková stylistka) české značky Triola.cz.
 Tvým úkolem je vytvářet texty v bezchybné, elegantní, plynulé a čtivé češtině, které dokonale sedí tónem a stylem naší značky.
+Pokud je zadaný produkt jiného typu než spodní prádlo (např. osuška, župan, domácí textil), piš o něm odborně a věcně podle jeho charakteru — bez podprsenkové terminologie.
 
 ZÁKLADNÍ MARKETINGOVÁ PRAVIDLA A TÓN ZNAČKY:
 1. Profesionalita a empatie: Píšeme s hlubokým pochopením pro potřeby žen. Známe potíže spojené s výběrem prádla (bolesti zad, zařezávající se ramínka, špatná podpora, zvedající se zadní obvod, asymetrie poprsí). Nabízíme řešení a úlevu.
@@ -657,14 +658,15 @@ def generate_batch_row_data(product_info, model_key, tone_key, use_simulation=Fa
 -----------------
 NÁZEV PRODUKTU: {prod_title}
 KÓD MODELU: {prod_code}
-STŘIH PODPRSENKY: {prod_cut}
-CHARAKTERISTIKA STŘIHU: {prod_char}
+STŘIH / TYP PRODUKTU: {prod_cut}
+CHARAKTERISTIKA: {prod_char}
 OFICIÁLNÍ KONSTRUKČNÍ SPECIFIKACE STŘIHU: {prod_docx if prod_docx else 'Není k dispozici'}
 KLÍČOVÉ VÝHODY: {prod_benefits}
 DOPORUČENÉ PRODEJNÍ ARGUMENTY A TIPY STYLISTKY: {prod_recommendation if prod_recommendation else 'Nejsou k dispozici'}
 DOSTUPNÉ BARVY: {prod_colors}
 DŮLEŽITÉ UPOZORNĚNÍ K BARVĚ: Piš výhradně o barvě {prod_colors}. Ignoruj jakékoliv jiné barvy zmíněné v původním popisu produktu nebo v marketingových podkladech.
 DŮLEŽITÉ UPOZORNĚNÍ K NÁZVŮM KOLEKCÍ: V textu NIKDY neuváděj ani nezmiňuj žádné názvy kolekcí (např. Selena, Tina, Olivia, atd.). Pokud se název jakékoliv kolekce objeví v podkladech, zcela ho vynechej.
+DŮLEŽITÉ UPOZORNĚNÍ K TYPU PRODUKTU: Piš o typu produktu uvedeném v NÁZEV PRODUKTU. Pokud produkt NENÍ spodní prádlo (např. osuška, župan, doplněk), NEPOUŽÍVEJ terminologii podprsenek (košíčky, kostice, ramínka, obvod, bra-fitting) a strukturu přizpůsob charakteru produktu (materiál, rozměry, použití, péče).
 -----------------
 {marketing_block}
 -----------------
@@ -680,7 +682,7 @@ Vygeneruj validní JSON objekt s následujícími klíči (všechny hodnoty mus�
    - Odrážkový seznam výhod a konstrukčních specifikací (<ul>, <li>) — 3 až 4 stručné odrážky. Uvedeš typ kostic, ramínek a obvodu.
    - Závěrečný odstavec (<p>) — 1 věta.
    (Používej výhradně tagy <p>, <strong>, <ul>, <li>, <h2>. ŽÁDNÉ doporučení stylistky, žádná <h3> sekce, žádné bra-fitting tipy.)
-4. "eshop_desc2": Doplňující popis 2 v HTML. Jeden odstavec o délce 40–60 slov (<p>, <strong>). Zaměř se na kombinování do sady ve stejné barvě (u podprsenky doporuč kalhotky stejné řady, u kalhotek naopak podprsenku) a šetrnou péči o prádlo (praní v sáčku, bez aviváže).
+4. "eshop_desc2": Doplňující popis 2 v HTML. Jeden odstavec o délce 40–60 slov (<p>, <strong>). U spodního prádla se zaměř na kombinování do sady ve stejné barvě (u podprsenky doporuč kalhotky stejné řady, u kalhotek naopak podprsenku) a šetrnou péči (praní v sáčku, bez aviváže). U jiných produktů (osuška, župan apod.) piš o péči a údržbě odpovídající materiálu a o vhodném doplňku ze sortimentu.
 5. "meta_title": SEO Meta Title. Délka 50-60 znaků (tvrdý limit, nepřekračuj). Priorita obsahu: typ produktu + kód modelu + barva; název střihu přidej jen, pokud se vejde do limitu. Atraktivní pro CTR.
 6. "meta_desc": SEO Meta Description. Délka 120-155 znaků. Věcné shrnutí výhod, kód, barva a výzva k akci (CTA) na konci.
 

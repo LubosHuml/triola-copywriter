@@ -133,6 +133,9 @@ def find_header_row_and_mapping(ws):
         "color": -1,
         "collection": -1,
         "arguments": -1,
+        "product_name": -1,
+        "material": -1,
+        "size": -1,
         "eshop_name": -1,
         "short_desc": -1,
         "eshop_desc1": -1,
@@ -159,11 +162,27 @@ def find_header_row_and_mapping(ws):
             if not val_lower:
                 continue
                 
-            # Code mapping
-            if "fazón" in val_lower or "číslo" in val_lower or "kod" in val_lower or val_lower == "code":
+            # Code mapping (nomenklatura ma prednost - byva to skutecny kod produktu)
+            if "nomenklatura" in val_lower:
+                current_map["code"] = idx
+                score += 6
+            elif "fazón" in val_lower or "číslo" in val_lower or "kod" in val_lower or val_lower == "code":
                 if current_map["code"] == -1:
                     current_map["code"] = idx
                     score += 5
+            # Nazev produktu (ne e-shop nazev, ne SK mutace)
+            elif ("název" in val_lower or "nazev" in val_lower or val_lower == "produkt") and "shop" not in val_lower and " sk" not in val_lower and "kolekce" not in val_lower:
+                if current_map["product_name"] == -1:
+                    current_map["product_name"] = idx
+                    score += 2
+            elif "materiál" in val_lower or "material" in val_lower:
+                if current_map["material"] == -1:
+                    current_map["material"] = idx
+                    score += 1
+            elif "velikost" in val_lower:
+                if current_map["size"] == -1:
+                    current_map["size"] = idx
+                    score += 1
             # Arguments mapping
             elif "argument" in val_lower or "prodejní" in val_lower or "prodejni" in val_lower:
                 if current_map["arguments"] == -1:
@@ -224,6 +243,9 @@ def find_header_row_and_mapping(ws):
             "color": -1,
             "collection": -1,
             "arguments": 1,
+            "product_name": -1,
+            "material": -1,
+            "size": -1,
             "eshop_name": -1,
             "short_desc": -1,
             "eshop_desc1": -1,
@@ -232,6 +254,30 @@ def find_header_row_and_mapping(ws):
             "meta_desc": -1,
         }
         
+    # VALIDACE DAT: header muze obsahovat vic sloupcu se slovem "kod" (napr. prazdny
+    # "Kod výrobce" vedle plne "Nomenklatura"). Zvoleny sloupec musi mit data pod sebou;
+    # kdyz nema, vyber ze vsech kandidatu ten s nejvice neprazdnymi hodnotami.
+    def _data_count(col_idx):
+        cnt = 0
+        for rr in range(best_row + 1, min(best_row + 60, ws.max_row) + 1):
+            v = ws.cell(row=rr, column=col_idx + 1).value
+            if v is not None and str(v).strip() not in ("", "None"):
+                cnt += 1
+        return cnt
+
+    if best_mapping.get("code", -1) != -1 and _data_count(best_mapping["code"]) == 0:
+        code_keywords = ("nomenklatura", "fazón", "fazon", "číslo", "cislo", "kod", "code")
+        candidates = []
+        for idx2 in range(ws.max_column):
+            hv = ws.cell(row=best_row, column=idx2 + 1).value
+            hv_lower = str(hv).strip().lower() if hv is not None else ""
+            if hv_lower and any(k in hv_lower for k in code_keywords):
+                candidates.append((_data_count(idx2), idx2))
+        candidates.sort(reverse=True)
+        if candidates and candidates[0][0] > 0:
+            logging.info(f"Sloupec kodu '{ws.cell(row=best_row, column=best_mapping['code']+1).value}' je prazdny - prepinam na sloupec {candidates[0][1]} ('{ws.cell(row=best_row, column=candidates[0][1]+1).value}') s {candidates[0][0]} hodnotami.")
+            best_mapping["code"] = candidates[0][1]
+
     return best_row, best_mapping
 
 def parse_batch_excel(file_path, products_db):
@@ -300,6 +346,17 @@ def parse_batch_excel(file_path, products_db):
             raw_args = ws.cell(row=r, column=mapping["arguments"] + 1).value
             args = str(raw_args).strip() if raw_args is not None else ""
             
+        # Volitelne sloupce: nazev produktu, material, velikost (pro nepradlove produkty)
+        def _cell(key):
+            if mapping.get(key, -1) == -1:
+                return ""
+            v = ws.cell(row=r, column=mapping[key] + 1).value
+            return str(v).strip() if v is not None else ""
+
+        product_name = _cell("product_name")
+        material = _cell("material")
+        size = _cell("size")
+
         # Check if we have the model in products cache
         in_db = model_code in products_db
         
@@ -310,6 +367,9 @@ def parse_batch_excel(file_path, products_db):
             "color_code": color_code,
             "color_name": color_name,
             "arguments": args,
+            "product_name": product_name,
+            "material": material,
+            "size": size,
             "in_db": in_db
         })
         
