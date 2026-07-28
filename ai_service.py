@@ -220,16 +220,30 @@ def generate_with_openai(api_key, model, system_prompt, user_prompt):
     return response.choices[0].message.content
 
 def generate_with_anthropic(api_key, model, system_prompt, user_prompt):
-    """Call Anthropic API using message structure."""
+    """Call Anthropic API using message structure.
+    Novejsi modely (Claude Sonnet 5+) parametr temperature odmitaji (400 deprecated) -
+    v takovem pripade se volani zopakuje bez nej."""
     client = anthropic.Anthropic(api_key=api_key)
-    message = client.messages.create(
+    kwargs = dict(
         model=model,
-        max_tokens=2500,
+        max_tokens=8000,  # Sonnet 5 pouziva cast tokenu na thinking - 2500 nestacilo na text
         system=system_prompt,
         messages=[{"role": "user", "content": user_prompt}],
-        temperature=0.7
     )
-    return message.content[0].text
+    try:
+        message = client.messages.create(temperature=0.7, **kwargs)
+    except Exception as e:
+        msg = str(e).lower()
+        if "temperature" in msg and ("deprecated" in msg or "unsupported" in msg or "invalid" in msg):
+            logging.info(f"Model '{model}' nepodporuje temperature - opakuji bez parametru.")
+            message = client.messages.create(**kwargs)
+        else:
+            raise
+    # Novejsi modely mohou vracet ThinkingBlock pred textem - vezmi vsechny textove bloky
+    text_parts = [b.text for b in message.content if getattr(b, "type", "") == "text" and hasattr(b, "text")]
+    if not text_parts:
+        raise RuntimeError(f"Model '{model}' nevratil zadny textovy blok (bloky: {[getattr(b, 'type', '?') for b in message.content]})")
+    return "\n".join(text_parts)
 
 def generate_with_gemini(api_key, model, system_prompt, user_prompt):
     """Call Google Gemini API using new google-genai client."""
