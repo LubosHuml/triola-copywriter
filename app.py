@@ -248,6 +248,8 @@ def batch_process_row():
     color_name = data.get('color_name', '')
     arguments = data.get('arguments', '')
     product_name = data.get('product_name', '').strip()
+    design_name = data.get('design_name', '').strip()
+    row_brand = data.get('brand', '').strip()
     material = data.get('material', '').strip()
     size = data.get('size', '').strip()
     model_key = data.get('model_key', 'claude-sonnet-5')
@@ -269,14 +271,42 @@ def batch_process_row():
         product_info["all_colors"] = [color_name] if color_name else product_info.get("all_colors", [])
         if arguments:
             product_info["sales_arguments"] = arguments
+        if row_brand:
+            product_info["brand"] = row_brand
+        if design_name:
+            product_info["design_name"] = design_name
     else:
         # Build stub for missing product.
         # Pokud Excel obsahuje nazev produktu (napr. "Osuška", "Župan"), pouzij ho -
         # ne kazdy produkt je podprsenka a strihova detekce prádla by AI zmatla.
         lingerie_words = ("podprsenk", "kalhotk", "prádlo", "pradlo", "body", "korzet", "podvazk", "kosilka", "košilka", "plavky", "braletka", "bralet")
         is_lingerie = (not product_name) or any(w in product_name.lower() for w in lingerie_words)
+        resolved_brand = row_brand if row_brand else "Triola"
+        is_triola_brand = "triola" in resolved_brand.lower()
 
-        if product_name and not is_lingerie:
+        if not is_triola_brand:
+            # CIZI ZNACKA (napr. sassa): zadne "Triola" v nazvu, ZADNY kod v nazvu,
+            # zadne Triola strihy - nazev = typ + znacka + design/kolekce.
+            title_parts = [product_name.strip().capitalize() if product_name else "Produkt", resolved_brand]
+            if design_name:
+                title_parts.append(design_name.strip().title())
+            details = [d for d in [f"Materiál: {material}" if material else "", f"Velikost: {size}" if size else ""] if d]
+            product_info = {
+                "model_code": model_code,
+                "generic_title": " ".join(title_parts),
+                "brand": resolved_brand,
+                "design_name": design_name,
+                "type": (product_name.strip().capitalize() if product_name else "Produkt"),
+                "cut_name": (product_name.strip().capitalize() if product_name else "Produkt"),
+                "characteristics": ". ".join(details) if details else f"Produkt značky {resolved_brand}.",
+                "benefits": details,
+                "docx_description": "",
+                "recommendation": f"Produkt značky {resolved_brand} (NE Triola). Nepoužívej názvy střihů Triola ani claimy Trioly. Vycházej z prodejních argumentů, materiálu a velikosti.",
+                "all_colors": [color_name] if color_name else ["standardní"],
+                "combined_description": "",
+                "sales_arguments": arguments
+            }
+        elif product_name and not is_lingerie:
             # Obecny produkt (osuska, zupan, doplnek...) - zadna podprsenkova terminologie
             details = [d for d in [f"Materiál: {material}" if material else "", f"Velikost: {size}" if size else ""] if d]
             product_info = {

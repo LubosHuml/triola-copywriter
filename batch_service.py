@@ -134,6 +134,8 @@ def find_header_row_and_mapping(ws):
         "collection": -1,
         "arguments": -1,
         "product_name": -1,
+        "design_name": -1,
+        "brand": -1,
         "material": -1,
         "size": -1,
         "eshop_name": -1,
@@ -170,10 +172,20 @@ def find_header_row_and_mapping(ws):
                 if current_map["code"] == -1:
                     current_map["code"] = idx
                     score += 5
-            # Nazev produktu (ne e-shop nazev, ne SK mutace)
-            elif ("název" in val_lower or "nazev" in val_lower or val_lower == "produkt") and "shop" not in val_lower and " sk" not in val_lower and "kolekce" not in val_lower:
+            # Typ produktu (sloupec "PRODUKT": podprsenka/kalhotky/osuška...)
+            elif val_lower == "produkt" or "typ produktu" in val_lower:
                 if current_map["product_name"] == -1:
                     current_map["product_name"] = idx
+                    score += 2
+            # Znacka (sassa, Triola...)
+            elif "značka" in val_lower or "znacka" in val_lower or val_lower == "brand":
+                if current_map["brand"] == -1:
+                    current_map["brand"] = idx
+                    score += 2
+            # Nazev designu/kolekce vyrobce (ne e-shop nazev, ne SK mutace)
+            elif ("název" in val_lower or "nazev" in val_lower) and "shop" not in val_lower and " sk" not in val_lower and "kolekce" not in val_lower:
+                if current_map["design_name"] == -1:
+                    current_map["design_name"] = idx
                     score += 2
             elif "materiál" in val_lower or "material" in val_lower:
                 if current_map["material"] == -1:
@@ -244,6 +256,8 @@ def find_header_row_and_mapping(ws):
             "collection": -1,
             "arguments": 1,
             "product_name": -1,
+            "design_name": -1,
+            "brand": -1,
             "material": -1,
             "size": -1,
             "eshop_name": -1,
@@ -354,8 +368,22 @@ def parse_batch_excel(file_path, products_db):
             return str(v).strip() if v is not None else ""
 
         product_name = _cell("product_name")
+        design_name = _cell("design_name")
+        brand = _cell("brand")
         material = _cell("material")
         size = _cell("size")
+
+        # Heuristika znacky podle prefixu kodu, pokud sloupec Znacka chybi
+        if not brand:
+            code_upper = model_code.upper()
+            for prefix, brand_name in (("SAS", "sassa"),):
+                if code_upper.startswith(prefix):
+                    brand = brand_name
+                    break
+
+        # Pokud typ produktu chybi, ale design vypada jako typ (Osuška...), pouzij ho
+        if not product_name and design_name and design_name.lower() in ("osuška", "osuska", "župan", "zupan", "podprsenka", "kalhotky"):
+            product_name = design_name
 
         # Check if we have the model in products cache
         in_db = model_code in products_db
@@ -368,6 +396,8 @@ def parse_batch_excel(file_path, products_db):
             "color_name": color_name,
             "arguments": args,
             "product_name": product_name,
+            "design_name": design_name,
+            "brand": brand,
             "material": material,
             "size": size,
             "in_db": in_db

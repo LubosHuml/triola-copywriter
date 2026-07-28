@@ -1066,6 +1066,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             color_name: row.color_name,
                             arguments: row.arguments,
                             product_name: row.product_name || '',
+                            design_name: row.design_name || '',
+                            brand: row.brand || '',
                             material: row.material || '',
                             size: row.size || '',
                             model_key: model_key,
