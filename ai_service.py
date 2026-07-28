@@ -656,20 +656,19 @@ def generate_batch_row_data(product_info, model_key, tone_key, use_simulation=Fa
             
     # Brand pravidla: cizi znacky (sassa apod.) nesmi nest text/claimy Trioly ani kod v nazvu
     prod_brand_name = str(product_info.get("brand", "Triola")).strip() or "Triola"
+    prod_brand_display = prod_brand_name[:1].upper() + prod_brand_name[1:]
     design_name = str(product_info.get("design_name", "")).strip()
     is_triola_brand = "triola" in prod_brand_name.lower()
     if is_triola_brand:
         brand_block = ""
     else:
-        design_note = f' Název designu/kolekce: "{design_name}".' if design_name else ""
         brand_block = f"""
 PRAVIDLA PRO CIZÍ ZNAČKU (mají přednost před obecnými pokyny níže):
-- Produkt je značky {prod_brand_name}. Triola.cz je pouze prodejce. NIKDY nepiš, že jde o produkt Triola.
+- Produkt je značky {prod_brand_display}. Triola.cz je pouze prodejce. NIKDY nepiš, že jde o produkt Triola.
 - ZAKÁZÁNO: claimy a příběh Trioly ("Laskavá. Česká. Padnoucí.", tradice českého šití, česká výroba, české švadleny) i názvy střihů Triola (Perfect-Fit, T-Fit, Top-Fit, Fixed-Fit, Soft-Fit).
-- "eshop_name": BEZ kódu produktu! Formát: typ produktu + {prod_brand_name} + název designu/kolekce + barva (např. "Podprsenka sassa Happy Choice - béžová").{design_note}
-- "meta_title": BEZ kódu produktu; obsahuje typ produktu, značku {prod_brand_name}, design a barvu. Suffix " | Triola.cz" (název e-shopu) přidat můžeš, pokud se vejde.
-- "meta_desc": piš o značce {prod_brand_name}; zmínka "na Triola.cz" jako místo nákupu je v pořádku.
-- Název designu/kolekce u cizí značky UVÁDĚT MŮŽEŠ a MÁŠ (zákaz názvů kolekcí platí pouze pro Triolu).
+- "eshop_name" i "meta_title": BEZ kódu produktu a BEZ názvu kolekce/designu.
+- "meta_desc": piš o značce {prod_brand_display}; zmínka "na Triola.cz" jako místo nákupu je v pořádku.
+- NÁZEV KOLEKCE/DESIGNU{f' ("{design_name}")' if design_name else ''}: NIKDY ho neuváděj v názvu produktu ani v meta title. V popisech ho vynech - místo něj používej konkrétní prodejní argumenty.
 -----------------
 """
 
@@ -700,7 +699,8 @@ DOPORUČENÉ PRODEJNÍ ARGUMENTY A TIPY STYLISTKY: {prod_recommendation if prod_
 DOSTUPNÉ BARVY: {prod_colors}
 DŮLEŽITÉ UPOZORNĚNÍ K BARVĚ: Piš výhradně o barvě {prod_colors}. Ignoruj jakékoliv jiné barvy zmíněné v původním popisu produktu nebo v marketingových podkladech.
 DŮLEŽITÉ UPOZORNĚNÍ K NÁZVŮM KOLEKCÍ (platí POUZE pro produkty značky Triola): V textu neuváděj názvy kolekcí Triola (např. Selena, Tina, Olivia). U cizích značek se řiď blokem PRAVIDLA PRO CIZÍ ZNAČKU.
-{brand_block}DŮLEŽITÉ UPOZORNĚNÍ K TYPU PRODUKTU: Piš o typu produktu uvedeném v NÁZEV PRODUKTU. Pokud produkt NENÍ spodní prádlo (např. osuška, župan, doplněk), NEPOUŽÍVEJ terminologii podprsenek (košíčky, kostice, ramínka, obvod, bra-fitting) a strukturu přizpůsob charakteru produktu (materiál, rozměry, použití, péče).
+{brand_block}ZNAČKA V TEXTECH: Název značky piš VŽDY s velkým počátečním písmenem (Triola, Sassa) — v názvu produktu, v popisech i v metadatech. Nikdy malými písmeny.
+DŮLEŽITÉ UPOZORNĚNÍ K TYPU PRODUKTU: Piš o typu produktu uvedeném v NÁZEV PRODUKTU. Pokud produkt NENÍ spodní prádlo (např. osuška, župan, doplněk), NEPOUŽÍVEJ terminologii podprsenek (košíčky, kostice, ramínka, obvod, bra-fitting) a strukturu přizpůsob charakteru produktu (materiál, rozměry, použití, péče).
 -----------------
 {marketing_block}
 -----------------
@@ -708,7 +708,7 @@ DŮLEŽITÉ UPOZORNĚNÍ K NÁZVŮM KOLEKCÍ (platí POUZE pro produkty značky 
 {tone_instructions}
 
 Vygeneruj validní JSON objekt s následujícími klíči (všechny hodnoty musí být v češtině):
-1. "eshop_name": Atraktivní marketingový a SEO název produktu pro e-shop. U značky Triola obsahuje kód modelu (např. "Podprsenka Triola 28895 Perfect-Fit - dračí ovoce"); u CIZÍ značky kód NEUVÁDĚJ (viz PRAVIDLA PRO CIZÍ ZNAČKU). Nepoužívej uvozovky. Max 100 znaků.
+1. "eshop_name": Název produktu podle pravidel Heureka.cz pro feedy: Značka (velké počáteční písmeno) + výstižný přívlastek z prodejních argumentů + typ produktu + barva. Vzor: "Sassa vyztužená podprsenka v béžové barvě", "Triola nevyztužená krajková podprsenka 28895 v černé barvě". Kód modelu uváděj POUZE u značky Triola (za typ produktu). NIKDY neuváděj název kolekce/designu. Přívlastek vybírej z prodejních argumentů (vyztužená/nevyztužená, krajková, bezešvá, s kosticí...). Nepoužívej uvozovky ani pomlčky mezi částmi. Max 100 znaků.
 2. "short_desc": Krátký popis v jednoduchém HTML. Jeden čtivý, prodejní odstavec o délce 30–50 slov (používej pouze tagy <p> a <strong>). Žádné odrážky ani nadpisy.
 3. "eshop_desc1": Hlavní popis v HTML. DÉLKA: stručný text, celkem 90–140 slov (140 slov je tvrdý maximální limit — žádná vata, každá věta musí nést informaci). Struktura:
    - Úvodní poutavý odstavec (<p>, <strong>) — 2 věty.
@@ -717,7 +717,7 @@ Vygeneruj validní JSON objekt s následujícími klíči (všechny hodnoty mus�
    - Závěrečný odstavec (<p>) — 1 věta.
    (Používej výhradně tagy <p>, <strong>, <ul>, <li>, <h2>. ŽÁDNÉ doporučení stylistky, žádná <h3> sekce, žádné bra-fitting tipy.)
 4. "eshop_desc2": Doplňující popis 2 v HTML. Jeden odstavec o délce 40–60 slov (<p>, <strong>). U spodního prádla se zaměř na kombinování do sady ve stejné barvě (u podprsenky doporuč kalhotky stejné řady, u kalhotek naopak podprsenku) a šetrnou péči (praní v sáčku, bez aviváže). U jiných produktů (osuška, župan apod.) piš o péči a údržbě odpovídající materiálu a o vhodném doplňku ze sortimentu.
-5. "meta_title": SEO Meta Title. Délka 50-60 znaků (tvrdý limit, nepřekračuj). U značky Triola priorita obsahu: typ produktu + kód modelu + barva (střih jen pokud se vejde). U CIZÍ značky BEZ kódu: typ + značka + design + barva. Atraktivní pro CTR.
+5. "meta_title": SEO Meta Title. Délka 50-60 znaků (tvrdý limit, nepřekračuj). Značka vždy s velkým počátečním písmenem, NIKDY název kolekce. U značky Triola: typ + kód modelu + barva. U CIZÍ značky BEZ kódu: značka + přívlastek + typ + barva. Atraktivní pro CTR.
 6. "meta_desc": SEO Meta Description. Délka 120-155 znaků. Věcné shrnutí výhod, kód, barva a výzva k akci (CTA) na konci.
 
 Odpověz VÝHRADNĚ ve formátu JSON s touto strukturou:

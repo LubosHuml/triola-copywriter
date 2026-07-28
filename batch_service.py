@@ -376,7 +376,7 @@ def parse_batch_excel(file_path, products_db):
         # Heuristika znacky podle prefixu kodu, pokud sloupec Znacka chybi
         if not brand:
             code_upper = model_code.upper()
-            for prefix, brand_name in (("SAS", "sassa"),):
+            for prefix, brand_name in (("SAS", "Sassa"),):
                 if code_upper.startswith(prefix):
                     brand = brand_name
                     break

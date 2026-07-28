@@ -285,11 +285,10 @@ def batch_process_row():
         is_triola_brand = "triola" in resolved_brand.lower()
 
         if not is_triola_brand:
-            # CIZI ZNACKA (napr. sassa): zadne "Triola" v nazvu, ZADNY kod v nazvu,
-            # zadne Triola strihy - nazev = typ + znacka + design/kolekce.
-            title_parts = [product_name.strip().capitalize() if product_name else "Produkt", resolved_brand]
-            if design_name:
-                title_parts.append(design_name.strip().title())
+            # CIZI ZNACKA (napr. Sassa): zadne "Triola", zadny kod ani nazev kolekce v nazvu.
+            # Heureka format: Znacka (velke pocatecni pismeno) + typ produktu.
+            resolved_brand = resolved_brand[:1].upper() + resolved_brand[1:]
+            title_parts = [resolved_brand, (product_name.strip().lower() if product_name else "produkt")]
             details = [d for d in [f"Materiál: {material}" if material else "", f"Velikost: {size}" if size else ""] if d]
             product_info = {
                 "model_code": model_code,
