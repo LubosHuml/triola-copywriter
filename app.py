@@ -360,7 +360,7 @@ def batch_process_row():
             "success": True,
             "row_num": row_num,
             "eshop_name": results.get("eshop_name", ""),
-            "short_desc": results.get("short_desc", ""),
+            "short_name": results.get("short_name", ""),
             "long_desc": results.get("eshop_desc1", ""),
             "eshop_desc2": results.get("eshop_desc2", ""),
             "meta_title": results.get("meta_title", ""),

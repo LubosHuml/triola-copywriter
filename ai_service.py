@@ -633,7 +633,7 @@ def generate_batch_row_data(product_info, model_key, tone_key, use_simulation=Fa
         
         return {
             "eshop_name": sim_name,
-            "short_desc": sim_short,
+            "short_name": sim_short,
             "eshop_desc1": sim_desc1,
             "eshop_desc2": sim_desc2,
             "meta_title": sim_meta_title,

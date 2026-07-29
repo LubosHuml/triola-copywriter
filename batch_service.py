@@ -140,7 +140,6 @@ def find_header_row_and_mapping(ws):
         "size": -1,
         "eshop_name": -1,
         "short_name": -1,
-        "short_desc": -1,
         "eshop_desc1": -1,
         "eshop_desc2": -1,
         "meta_title": -1,
@@ -225,10 +224,6 @@ def find_header_row_and_mapping(ws):
                 if current_map["eshop_name"] == -1:
                     current_map["eshop_name"] = idx
                     score += 3
-            elif "krátký popis" in val_lower or "kratky popis" in val_lower:
-                if current_map["short_desc"] == -1:
-                    current_map["short_desc"] = idx
-                    score += 3
             elif "triola eshop popis 2" in val_lower or "popis 2" in val_lower:
                 if current_map["eshop_desc2"] == -1:
                     current_map["eshop_desc2"] = idx
@@ -267,7 +262,6 @@ def find_header_row_and_mapping(ws):
             "size": -1,
             "eshop_name": -1,
             "short_name": -1,
-            "short_desc": -1,
             "eshop_desc1": -1,
             "eshop_desc2": -1,
             "meta_title": -1,
@@ -496,14 +490,14 @@ def write_row_results_to_excel(file_path, row_num, results):
             ws.cell(row=row_num, column=col_idx, value=val)
         
     wb.save(file_path)
-    logging.info(f"Zapsáno 6 sloupců výsledků na řádek {row_num} v {file_path}")
+    logging.info(f"Zapsáno {sum(1 for k in results if col_write_map.get(k, -1) != -1)} sloupců výsledků na řádek {row_num} v {file_path}")
 
 def write_descriptions_to_excel(file_path, row_num, short_html, long_html):
     """
     Wrapper for backward compatibility.
     """
     results = {
-        "short_desc": short_html,
+        "short_name": short_html,
         "eshop_desc1": long_html
     }
     write_row_results_to_excel(file_path, row_num, results)
