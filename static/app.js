@@ -1088,7 +1088,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (previewBtn) {
                             previewBtn.disabled = false;
                             previewBtn.setAttribute('data-eshop-name', data.eshop_name || '');
-                            previewBtn.setAttribute('data-short-html', data.short_desc || '');
+                            previewBtn.setAttribute('data-short-html', data.short_name || '');
                             previewBtn.setAttribute('data-long-html', data.long_desc || '');
                             previewBtn.setAttribute('data-desc2-html', data.eshop_desc2 || '');
                             previewBtn.setAttribute('data-meta-title', data.meta_title || '');
@@ -1099,7 +1099,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 showBatchPreview(
                                     row.raw_code,
                                     data.eshop_name || '',
-                                    data.short_desc || '',
+                                    data.short_name || '',
                                     data.long_desc || '',
                                     data.eshop_desc2 || '',
                                     data.meta_title || '',

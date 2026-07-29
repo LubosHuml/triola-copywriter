@@ -139,6 +139,7 @@ def find_header_row_and_mapping(ws):
         "material": -1,
         "size": -1,
         "eshop_name": -1,
+        "short_name": -1,
         "short_desc": -1,
         "eshop_desc1": -1,
         "eshop_desc2": -1,
@@ -216,7 +217,11 @@ def find_header_row_and_mapping(ws):
                     current_map["collection"] = idx
                     score += 2
             # Outputs mapping
-            elif "e-shop název" in val_lower or "eshop nazev" in val_lower:
+            elif ("krátký název" in val_lower or "kratky nazev" in val_lower) and not val_lower.endswith(" sk"):
+                if current_map["short_name"] == -1:
+                    current_map["short_name"] = idx
+                    score += 3
+            elif ("e-shop název" in val_lower or "eshop nazev" in val_lower) and not val_lower.endswith(" sk"):
                 if current_map["eshop_name"] == -1:
                     current_map["eshop_name"] = idx
                     score += 3
@@ -261,6 +266,7 @@ def find_header_row_and_mapping(ws):
             "material": -1,
             "size": -1,
             "eshop_name": -1,
+            "short_name": -1,
             "short_desc": -1,
             "eshop_desc1": -1,
             "eshop_desc2": -1,
@@ -408,7 +414,7 @@ def parse_batch_excel(file_path, products_db):
 
 def write_row_results_to_excel(file_path, row_num, results):
     """
-    Writes the 6 generated copywriting results into Excel columns.
+    Writes the 12 generated copywriting results (CZ + SK) into Excel columns.
     If the columns do not exist in the sheet, they are added at the end of the header row.
     """
     wb = openpyxl.load_workbook(file_path)
@@ -424,32 +430,54 @@ def write_row_results_to_excel(file_path, row_num, results):
     # Define mapping of result keys to headers we look for or create
     key_to_headers = {
         "eshop_name": ["E-SHOP NÁZEV", "Název E-shop", "E-shop název"],
-        "short_desc": ["KRÁTKÝ POPIS", "Krátký popis (HTML)", "Krátký popis"],
+        "short_name": ["E-SHOP KRÁTKÝ NÁZEV", "E-shop krátký název", "Krátký název"],
         "eshop_desc1": ["TRIOLA ESHOP POPIS", "Dlouhý popis (HTML)", "Popis 1"],
         "eshop_desc2": ["TRIOLA ESHOP POPIS 2", "Popis 2"],
         "meta_title": ["ESHOP META TITLE", "Meta Title", "Meta title"],
-        "meta_desc": ["ESHOP META DESCRIPTION", "Meta Description", "Meta description"]
+        "meta_desc": ["ESHOP META DESCRIPTION", "Meta Description", "Meta description"],
+        # slovenska mutace
+        "eshop_name_sk": ["E-SHOP NÁZEV SK", "E-shop název SK"],
+        "short_name_sk": ["E-SHOP KRÁTKÝ NÁZEV SK", "E-shop krátký název SK"],
+        "eshop_desc1_sk": ["TRIOLA ESHOP POPIS SK", "Popis 1 SK"],
+        "eshop_desc2_sk": ["TRIOLA ESHOP POPIS 2 SK", "Popis 2 SK"],
+        "meta_title_sk": ["ESHOP META TITLE SK", "Meta Title SK"],
+        "meta_desc_sk": ["ESHOP META DESCRIPTION SK", "Meta Description SK"],
     }
     
-    # Find existing columns (case-insensitive)
+    def _is_sk_header(h):
+        """Konci hlavicka jazykovou mutaci SK?"""
+        hl = h.lower().strip()
+        return hl.endswith(" sk") or hl.endswith("_sk") or hl.endswith("-sk")
+
+    # Find existing columns (case-insensitive). CZ klic NESMI sebrat SK sloupec a naopak.
+    used_cols = set()
     for key, possible_headers in key_to_headers.items():
+        want_sk = key.endswith("_sk")
         found_idx = -1
-        
+
         # 1. Exact match
         for idx, h in enumerate(headers):
+            if (idx + 1) in used_cols or _is_sk_header(h) != want_sk:
+                continue
             h_lower = h.lower().strip()
             if any(ph.lower().strip() == h_lower for ph in possible_headers):
                 found_idx = idx + 1
                 break
-                
-        # 2. Substring match
+
+        # 2. Substring match (jen v ramci stejne jazykove mutace)
         if found_idx == -1:
             for idx, h in enumerate(headers):
+                if (idx + 1) in used_cols or _is_sk_header(h) != want_sk:
+                    continue
                 h_lower = h.lower().strip()
+                if not h_lower:
+                    continue
                 if any(ph.lower().strip() in h_lower or h_lower in ph.lower().strip() for ph in possible_headers):
                     found_idx = idx + 1
                     break
-                    
+
+        if found_idx != -1:
+            used_cols.add(found_idx)
         col_write_map[key] = found_idx
 
     # If any column is not found, append it to the header row

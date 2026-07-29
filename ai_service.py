@@ -226,7 +226,7 @@ def generate_with_anthropic(api_key, model, system_prompt, user_prompt):
     client = anthropic.Anthropic(api_key=api_key)
     kwargs = dict(
         model=model,
-        max_tokens=8000,  # Sonnet 5 pouziva cast tokenu na thinking - 2500 nestacilo na text
+        max_tokens=16000,  # 12 poli (CZ+SK) + thinking u Sonnet 5/Opus
         system=system_prompt,
         messages=[{"role": "user", "content": user_prompt}],
     )
@@ -576,7 +576,8 @@ INFORMACE O STŘIZÍCH TRIOLA (ZNALOSTNÍ BÁZE):
 - Top-Fit / Sensual-Fit: Hladká vyztužená podprsenka s nižším středem. Skvělá do hlubokých výstřihů.
 
 PRAVIDLA PRO FORMÁT A ODPOVĚĎ:
-- Vždy odpovídej výhradně ve formátu JSON s přesně definovanými klíči.
+- Vždy odpovídej výhradně ve formátu JSON s přesně definovanými klíči (české i slovenské verze textů).
+- Slovenské verze piš přirozenou spisovnou slovenčinou od rodilého mluvčího, ne doslovným překladem z češtiny.
 - Nepřidávej žádný vysvětlující text, úvodní kecy ani závěrečné poznámky. Výstupem musí být validní JSON.
 - HTML tagy v popisech musí být čisté a bez chyb (žádné obalové tagy <html>, <body>, apod.).
 - Respektuj zadanou barvu a omez se pouze na ni.
@@ -584,9 +585,9 @@ PRAVIDLA PRO FORMÁT A ODPOVĚĎ:
 
 def generate_batch_row_data(product_info, model_key, tone_key, use_simulation=False):
     """
-    Generates all 6 required copywriting fields for a batch row:
+    Generates all 12 required copywriting fields for a batch row (CZ + SK):
     - E-shop Název (eshop_name)
-    - Krátký popis (short_desc)
+    - E-shop krátký název / anotace (short_name)
     - Triola Eshop popis (eshop_desc1)
     - Triola Eshop popis 2 (eshop_desc2)
     - Eshop Meta Title (meta_title)
@@ -688,7 +689,7 @@ PRAVIDLA PRO CIZÍ ZNAČKU (mají přednost před obecnými pokyny níže):
     anthropic_key = os.getenv("ANTHROPIC_API_KEY")
     google_key = os.getenv("GOOGLE_API_KEY")
     
-    user_prompt = f"""Vytvoř kompletní sadu 6 textů a SEO tagů pro produkt značky Triola:
+    user_prompt = f"""Vytvoř kompletní sadu 12 textů a SEO tagů pro produkt (6 českých + 6 slovenských) pro e-shop Triola.cz:
 -----------------
 NÁZEV PRODUKTU: {prod_title}
 NÁZEV KOLEKCE / DESIGNU: {design_name if design_name else 'není uveden'}
@@ -711,7 +712,7 @@ DŮLEŽITÉ UPOZORNĚNÍ K TYPU PRODUKTU: Piš o typu produktu uvedeném v NÁZE
 
 Vygeneruj validní JSON objekt s následujícími klíči (všechny hodnoty musí být v češtině):
 1. "eshop_name": Název produktu podle pravidel Heureka.cz pro feedy: Značka (velké počáteční písmeno) + výstižný přívlastek z prodejních argumentů + typ produktu + název kolekce (jen u cizí značky, pokud je v podkladech) + barva. Vzor: "Sassa vyztužená krajková podprsenka Happy Choice v béžové barvě", "Triola nevyztužená krajková podprsenka 28895 v černé barvě". Kód modelu uváděj POUZE u značky Triola; název kolekce POUZE u cizí značky (u Trioly kolekce nikdy). Přívlastek vybírej z prodejních argumentů (vyztužená/nevyztužená, krajková, bezešvá, s kosticí...) — NIKDY ho neodvozuj z názvu kolekce. Nepoužívej uvozovky ani pomlčky mezi částmi. Max 100 znaků.
-2. "short_desc": Krátký popis v jednoduchém HTML. Jeden čtivý, prodejní odstavec o délce 30–50 slov (používej pouze tagy <p> a <strong>). Žádné odrážky ani nadpisy.
+2. "short_name": E-SHOP KRÁTKÝ NÁZEV — anotace pod nadpisem produktu. JEDNA kratší věta (max 120 znaků), čistý text bez HTML. Shrnuje nejsilnější prodejní argument a odpovídá na otázku "proč si to koupit". Piš neuromarketingově: konkrétní benefit pro zákaznici, ne výčet parametrů (např. "Pevná opora bez zařezávání, i po celém dni v kanceláři."). Nezačínej názvem produktu ani značkou.
 3. "eshop_desc1": Hlavní popis v HTML. DÉLKA: stručný text, celkem 90–140 slov (140 slov je tvrdý maximální limit — žádná vata, každá věta musí nést informaci). Struktura:
    - Úvodní poutavý odstavec (<p>, <strong>) — 2 věty.
    - Podnadpis <h2> s názvem střihu a popisem chování na těle.
@@ -722,14 +723,29 @@ Vygeneruj validní JSON objekt s následujícími klíči (všechny hodnoty mus�
 5. "meta_title": SEO Meta Title. Délka 50-60 znaků (tvrdý limit, nepřekračuj). Značka vždy s velkým počátečním písmenem. U značky Triola: typ + kód modelu + barva (kolekce nikdy). U CIZÍ značky BEZ kódu: značka + přívlastek + typ + barva; kolekci přidej, jen pokud se vejde. Atraktivní pro CTR.
 6. "meta_desc": SEO Meta Description. Délka 120-155 znaků. Věcné shrnutí výhod, kód, barva a výzva k akci (CTA) na konci.
 
+SLOVENSKÁ MUTACE (klíče 7–12) — POVINNÉ:
+Ke každému z výše uvedených šesti textů vytvoř slovenskou verzi. NEJDE o doslovný překlad: piš přirozenou, spisovnou slovenčinou tak, jak by text napsal rodilý slovenský copywriter (správná slovenská skloňování, výrazy jako "podprsenka", "nohavičky", "čipka", "kostice", "ramienka", "obvod", "veľkosť"). Zachovej stejná pravidla (délky, HTML tagy, zákaz názvů kolekcí u Trioly, značka s velkým písmenem, žádné odvozování vlastností z názvu kolekce). Názvy značek, kolekcí a kódy modelů zůstávají beze změny.
+7. "eshop_name_sk": slovenská verze pole eshop_name.
+8. "short_name_sk": slovenská verze pole short_name.
+9. "eshop_desc1_sk": slovenská verze pole eshop_desc1 (stejná HTML struktura i délka).
+10. "eshop_desc2_sk": slovenská verze pole eshop_desc2.
+11. "meta_title_sk": slovenská verze pole meta_title (dodrž limit 50–60 znaků).
+12. "meta_desc_sk": slovenská verze pole meta_desc (dodrž limit 120–155 znaků).
+
 Odpověz VÝHRADNĚ ve formátu JSON s touto strukturou:
 {{
   "eshop_name": "...",
-  "short_desc": "...",
+  "short_name": "...",
   "eshop_desc1": "...",
   "eshop_desc2": "...",
   "meta_title": "...",
-  "meta_desc": "..."
+  "meta_desc": "...",
+  "eshop_name_sk": "...",
+  "short_name_sk": "...",
+  "eshop_desc1_sk": "...",
+  "eshop_desc2_sk": "...",
+  "meta_title_sk": "...",
+  "meta_desc_sk": "..."
 }}
 """
 
@@ -754,7 +770,8 @@ Odpověz VÝHRADNĚ ve formátu JSON s touto strukturou:
         else:
             raise ValueError(f"Nepodporovaný typ modelu: {model_key}")
             
-        required_keys = ["eshop_name", "short_desc", "eshop_desc1", "eshop_desc2", "meta_title", "meta_desc"]
+        required_keys = ["eshop_name", "short_name", "eshop_desc1", "eshop_desc2", "meta_title", "meta_desc",
+                         "eshop_name_sk", "short_name_sk", "eshop_desc1_sk", "eshop_desc2_sk", "meta_title_sk", "meta_desc_sk"]
         parsed = parse_robust_json(text, required_keys)
         return parsed
         
