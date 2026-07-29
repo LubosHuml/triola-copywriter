@@ -691,6 +691,7 @@ PRAVIDLA PRO CIZÍ ZNAČKU (mají přednost před obecnými pokyny níže):
     user_prompt = f"""Vytvoř kompletní sadu 6 textů a SEO tagů pro produkt značky Triola:
 -----------------
 NÁZEV PRODUKTU: {prod_title}
+NÁZEV KOLEKCE / DESIGNU: {design_name if design_name else 'není uveden'}
 KÓD MODELU: {prod_code}
 STŘIH / TYP PRODUKTU: {prod_cut}
 CHARAKTERISTIKA: {prod_char}

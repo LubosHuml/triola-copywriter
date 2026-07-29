@@ -289,6 +289,8 @@ def batch_process_row():
             # Heureka format: Znacka (velke pocatecni pismeno) + typ produktu.
             resolved_brand = resolved_brand[:1].upper() + resolved_brand[1:]
             title_parts = [resolved_brand, (product_name.strip().lower() if product_name else "produkt")]
+            if design_name:
+                title_parts.append(design_name.strip().title())
             details = [d for d in [f"Materiál: {material}" if material else "", f"Velikost: {size}" if size else ""] if d]
             product_info = {
                 "model_code": model_code,
