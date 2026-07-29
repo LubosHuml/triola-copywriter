@@ -666,9 +666,10 @@ def generate_batch_row_data(product_info, model_key, tone_key, use_simulation=Fa
 PRAVIDLA PRO CIZÍ ZNAČKU (mají přednost před obecnými pokyny níže):
 - Produkt je značky {prod_brand_display}. Triola.cz je pouze prodejce. NIKDY nepiš, že jde o produkt Triola.
 - ZAKÁZÁNO: claimy a příběh Trioly ("Laskavá. Česká. Padnoucí.", tradice českého šití, česká výroba, české švadleny) i názvy střihů Triola (Perfect-Fit, T-Fit, Top-Fit, Fixed-Fit, Soft-Fit).
-- "eshop_name" i "meta_title": BEZ kódu produktu a BEZ názvu kolekce/designu.
+- "eshop_name": BEZ kódu produktu. Název kolekce{f' ("{design_name}")' if design_name else ''} do názvu VLOŽ - za typ produktu, před barvu.
+- "meta_title": BEZ kódu produktu; název kolekce uveď, jen pokud se vejde do limitu 60 znaků.
 - "meta_desc": piš o značce {prod_brand_display}; zmínka "na Triola.cz" jako místo nákupu je v pořádku.
-- NÁZEV KOLEKCE/DESIGNU{f' ("{design_name}")' if design_name else ''}: NIKDY ho neuváděj v názvu produktu ani v meta title. V popisech ho vynech - místo něj používej konkrétní prodejní argumenty.
+- KOLEKCE JE JEN NÁZEV — KRITICKÉ PRAVIDLO: název kolekce/designu je pouze obchodní označení, NIC nevypovídá o produktu. NIKDY z něj neodvozuj vlastnosti, materiál, sezónnost, pocity ani použití (např. "Winter Time" NEZNAMENÁ zimní či hřejivý materiál, "Tempting Passion" NEZNAMENÁ nic o vlastnostech). Veškeré vlastnosti produktu čerpej VÝHRADNĚ z prodejních argumentů a podkladů. V popisech smíš kolekci zmínit pouze jako prosté jméno ("z kolekce Winter Time"), bez jakéhokoli rozvíjení či asociací.
 -----------------
 """
 
@@ -708,7 +709,7 @@ DŮLEŽITÉ UPOZORNĚNÍ K TYPU PRODUKTU: Piš o typu produktu uvedeném v NÁZE
 {tone_instructions}
 
 Vygeneruj validní JSON objekt s následujícími klíči (všechny hodnoty musí být v češtině):
-1. "eshop_name": Název produktu podle pravidel Heureka.cz pro feedy: Značka (velké počáteční písmeno) + výstižný přívlastek z prodejních argumentů + typ produktu + barva. Vzor: "Sassa vyztužená podprsenka v béžové barvě", "Triola nevyztužená krajková podprsenka 28895 v černé barvě". Kód modelu uváděj POUZE u značky Triola (za typ produktu). NIKDY neuváděj název kolekce/designu. Přívlastek vybírej z prodejních argumentů (vyztužená/nevyztužená, krajková, bezešvá, s kosticí...). Nepoužívej uvozovky ani pomlčky mezi částmi. Max 100 znaků.
+1. "eshop_name": Název produktu podle pravidel Heureka.cz pro feedy: Značka (velké počáteční písmeno) + výstižný přívlastek z prodejních argumentů + typ produktu + název kolekce (jen u cizí značky, pokud je v podkladech) + barva. Vzor: "Sassa vyztužená krajková podprsenka Happy Choice v béžové barvě", "Triola nevyztužená krajková podprsenka 28895 v černé barvě". Kód modelu uváděj POUZE u značky Triola; název kolekce POUZE u cizí značky (u Trioly kolekce nikdy). Přívlastek vybírej z prodejních argumentů (vyztužená/nevyztužená, krajková, bezešvá, s kosticí...) — NIKDY ho neodvozuj z názvu kolekce. Nepoužívej uvozovky ani pomlčky mezi částmi. Max 100 znaků.
 2. "short_desc": Krátký popis v jednoduchém HTML. Jeden čtivý, prodejní odstavec o délce 30–50 slov (používej pouze tagy <p> a <strong>). Žádné odrážky ani nadpisy.
 3. "eshop_desc1": Hlavní popis v HTML. DÉLKA: stručný text, celkem 90–140 slov (140 slov je tvrdý maximální limit — žádná vata, každá věta musí nést informaci). Struktura:
    - Úvodní poutavý odstavec (<p>, <strong>) — 2 věty.
@@ -717,7 +718,7 @@ Vygeneruj validní JSON objekt s následujícími klíči (všechny hodnoty mus�
    - Závěrečný odstavec (<p>) — 1 věta.
    (Používej výhradně tagy <p>, <strong>, <ul>, <li>, <h2>. ŽÁDNÉ doporučení stylistky, žádná <h3> sekce, žádné bra-fitting tipy.)
 4. "eshop_desc2": Doplňující popis 2 v HTML. Jeden odstavec o délce 40–60 slov (<p>, <strong>). U spodního prádla se zaměř na kombinování do sady ve stejné barvě (u podprsenky doporuč kalhotky stejné řady, u kalhotek naopak podprsenku) a šetrnou péči (praní v sáčku, bez aviváže). U jiných produktů (osuška, župan apod.) piš o péči a údržbě odpovídající materiálu a o vhodném doplňku ze sortimentu.
-5. "meta_title": SEO Meta Title. Délka 50-60 znaků (tvrdý limit, nepřekračuj). Značka vždy s velkým počátečním písmenem, NIKDY název kolekce. U značky Triola: typ + kód modelu + barva. U CIZÍ značky BEZ kódu: značka + přívlastek + typ + barva. Atraktivní pro CTR.
+5. "meta_title": SEO Meta Title. Délka 50-60 znaků (tvrdý limit, nepřekračuj). Značka vždy s velkým počátečním písmenem. U značky Triola: typ + kód modelu + barva (kolekce nikdy). U CIZÍ značky BEZ kódu: značka + přívlastek + typ + barva; kolekci přidej, jen pokud se vejde. Atraktivní pro CTR.
 6. "meta_desc": SEO Meta Description. Délka 120-155 znaků. Věcné shrnutí výhod, kód, barva a výzva k akci (CTA) na konci.
 
 Odpověz VÝHRADNĚ ve formátu JSON s touto strukturou:
