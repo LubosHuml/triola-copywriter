@@ -137,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const titleMapping = {
             generator: 'Generátor textů',
             catalog: 'Knihovna modelů Triola',
+            sheets: 'Google Sheets — hlavní tabulka Triola',
             batch: 'Hromadné generování z Excelu',
             seo: 'Prediktivně kalibrované SEO snippety',
             brandbook: 'Triola Brand Book & Stylistika',
@@ -1799,3 +1800,135 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+
+// ==================== GOOGLE SHEETS ====================
+(function initSheets() {
+    const statusText = document.getElementById('sheets-status-text');
+    const statusBox = document.getElementById('sheets-status-box');
+    const sheetSelect = document.getElementById('sheets-select');
+    const loadBtn = document.getElementById('sheets-load-btn');
+    const generateBtn = document.getElementById('sheets-generate-btn');
+    const rowsPanel = document.getElementById('sheets-rows-panel');
+    const rowsBody = document.getElementById('sheets-rows-body');
+    const progressText = document.getElementById('sheets-progress-text');
+    const targetInfo = document.getElementById('sheets-target-info');
+    const targetCols = document.getElementById('sheets-target-cols');
+    const skipDone = document.getElementById('sheets-skip-done');
+    if (!sheetSelect || !loadBtn) return;
+
+    let sheetRows = [];
+    let running = false;
+
+    async function checkStatus() {
+        try {
+            const r = await fetch('/api/sheets/status');
+            const d = await r.json();
+            if (d.ok) {
+                statusText.innerHTML = `Připojeno k tabulce <strong>${d.spreadsheet_title || ''}</strong> — čtení i zápis ověřeny. Účet: ${d.service_account}`;
+                statusBox.style.borderColor = '#22c55e';
+                await loadSheetList();
+            } else {
+                const acct = d.service_account ? `<br>Service account: <code>${d.service_account}</code> — nasdílej mu tabulku jako Editor.` : '';
+                statusText.innerHTML = `<strong>Nepřipojeno.</strong> ${d.error || 'Chybí přihlašovací údaje.'}${acct}`;
+                statusBox.style.borderColor = '#ef4444';
+            }
+        } catch (e) {
+            statusText.textContent = 'Chyba spojení: ' + e.message;
+        }
+    }
+
+    async function loadSheetList() {
+        const r = await fetch('/api/sheets/list');
+        const d = await r.json();
+        if (!d.success) { sheetSelect.innerHTML = `<option value="">Chyba: ${d.error}</option>`; return; }
+        sheetSelect.innerHTML = '<option value="">— vyber list —</option>' +
+            d.sheets.map(sh => `<option value="${sh.title}">${sh.title}</option>`).join('');
+    }
+
+    loadBtn.addEventListener('click', async () => {
+        const sheet = sheetSelect.value;
+        if (!sheet) { alert('Nejprve vyber list.'); return; }
+        loadBtn.disabled = true;
+        progressText.textContent = 'Načítám řádky…';
+        rowsPanel.style.display = 'block';
+        try {
+            const r = await fetch('/api/sheets/rows?sheet=' + encodeURIComponent(sheet));
+            const d = await r.json();
+            if (!d.success) { progressText.textContent = 'Chyba: ' + d.error; return; }
+            sheetRows = d.rows;
+            targetCols.innerHTML = Object.entries(d.target_columns)
+                .map(([k, v]) => `<span class="color-tag" style="margin-right:6px;">${k}: <strong>${v}</strong></span>`).join('');
+            targetInfo.style.display = 'block';
+            renderRows();
+            progressText.textContent = `Načteno ${d.total_rows} řádků (záhlaví na řádku ${d.header_row}).`;
+        } catch (e) {
+            progressText.textContent = 'Chyba: ' + e.message;
+        } finally {
+            loadBtn.disabled = false;
+            if (window.lucide) lucide.createIcons();
+        }
+    });
+
+    function renderRows() {
+        rowsBody.innerHTML = sheetRows.map(row => `
+            <tr id="sheets-row-${row.row_num}">
+                <td>${row.row_num}</td>
+                <td><strong>${row.model_code}</strong></td>
+                <td>${row.product_name || ''}</td>
+                <td>${row.design_name || ''}</td>
+                <td>${row.color_name || ''}</td>
+                <td id="sheets-status-${row.row_num}">${row.has_output ? '<span style="color:#f59e0b;">má text</span>' : 'čeká'}</td>
+            </tr>`).join('');
+    }
+
+    generateBtn.addEventListener('click', async () => {
+        if (running) return;
+        const sheet = sheetSelect.value;
+        const todo = sheetRows.filter(r => !(skipDone.checked && r.has_output));
+        if (!todo.length) { alert('Není co generovat.'); return; }
+        if (!confirm(`Vygenerovat a zapsat texty pro ${todo.length} řádků v listu "${sheet}"?\n\nZápis proběhne pouze do sloupců s copywritingem.`)) return;
+
+        running = true;
+        generateBtn.disabled = true;
+        const modelKey = document.getElementById('sheets-model-select').value;
+        const toneKey = document.getElementById('sheets-tone-select').value;
+        let ok = 0, fail = 0;
+
+        for (let i = 0; i < todo.length; i++) {
+            const row = todo[i];
+            const cell = document.getElementById('sheets-status-' + row.row_num);
+            if (cell) cell.innerHTML = '<span style="color:#3b82f6;">generuji…</span>';
+            progressText.textContent = `Zpracovávám ${i + 1} z ${todo.length}… (hotovo: ${ok}, chyby: ${fail})`;
+            try {
+                const r = await fetch('/api/sheets/process-row', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sheet: sheet, row_num: row.row_num, model_code: row.model_code,
+                        color_name: row.color_name, arguments: row.arguments,
+                        product_name: row.product_name, design_name: row.design_name,
+                        brand: row.brand, material: row.material, size: row.size,
+                        model_key: modelKey, tone_key: toneKey
+                    })
+                });
+                const d = await r.json();
+                if (d.success) {
+                    ok++;
+                    const cells = (d.written_cells || []).map(c => c.cell).join(', ');
+                    if (cell) cell.innerHTML = `<span style="color:#22c55e;">zapsáno (${cells})</span>`;
+                } else {
+                    fail++;
+                    if (cell) cell.innerHTML = `<span style="color:#ef4444;" title="${d.error}">chyba</span>`;
+                }
+            } catch (e) {
+                fail++;
+                if (cell) cell.innerHTML = '<span style="color:#ef4444;">chyba</span>';
+            }
+        }
+        progressText.textContent = `Hotovo: ${ok} zapsáno, ${fail} chyb.`;
+        generateBtn.disabled = false;
+        running = false;
+    });
+
+    checkStatus();
+})();

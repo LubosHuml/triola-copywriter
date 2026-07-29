@@ -124,9 +124,30 @@ def resolve_color(model_code, color_code, products_db):
 
 def find_header_row_and_mapping(ws):
     """
-    Prohledá prvních 10 řádků listu a najde ten s nejvyšší shodou klíčových slov.
-    Vrací (header_row_num, col_map) s indexy sloupců (0-based).
+    Prohledá prvních 10 řádků listu (openpyxl) a najde záhlaví.
+    Deleguje na detect_header_mapping, aby Excel i Google Sheets pouzivaly stejna pravidla.
     """
+    last = min(ws.max_row, 70)
+    rows = [[ws.cell(row=r, column=c).value for c in range(1, ws.max_column + 1)]
+            for r in range(1, last + 1)]
+    return detect_header_mapping(rows)
+
+
+def detect_header_mapping(rows):
+    """
+    rows: list of lists (0-indexed radky, hodnoty bunky nebo None).
+    Vrací (header_row_num 1-based, col_map s 0-based indexy sloupcu).
+    Jediny zdroj pravdy pro nazvy sloupcu - pouziva Excel import i Google Sheets.
+    """
+    n_cols = max((len(r) for r in rows), default=0)
+
+    def cell(r_idx, c_idx):
+        """1-based radek, 0-based sloupec."""
+        if r_idx - 1 >= len(rows):
+            return None
+        row = rows[r_idx - 1]
+        return row[c_idx] if c_idx < len(row) else None
+
     col_map = {
         "code": -1,
         "cut": -1,
@@ -150,10 +171,10 @@ def find_header_row_and_mapping(ws):
     best_score = -1
     best_mapping = {}
     
-    for r in range(1, 11):
+    for r in range(1, min(11, len(rows) + 1)):
         row_vals = []
-        for c in range(1, ws.max_column + 1):
-            val = ws.cell(row=r, column=c).value
+        for c in range(n_cols):
+            val = cell(r, c)
             row_vals.append(str(val).strip() if val is not None else "")
             
         score = 0
@@ -273,8 +294,8 @@ def find_header_row_and_mapping(ws):
     # kdyz nema, vyber ze vsech kandidatu ten s nejvice neprazdnymi hodnotami.
     def _data_count(col_idx):
         cnt = 0
-        for rr in range(best_row + 1, min(best_row + 60, ws.max_row) + 1):
-            v = ws.cell(row=rr, column=col_idx + 1).value
+        for rr in range(best_row + 1, min(best_row + 60, len(rows)) + 1):
+            v = cell(rr, col_idx)
             if v is not None and str(v).strip() not in ("", "None"):
                 cnt += 1
         return cnt
@@ -282,14 +303,14 @@ def find_header_row_and_mapping(ws):
     if best_mapping.get("code", -1) != -1 and _data_count(best_mapping["code"]) == 0:
         code_keywords = ("nomenklatura", "fazón", "fazon", "číslo", "cislo", "kod", "code")
         candidates = []
-        for idx2 in range(ws.max_column):
-            hv = ws.cell(row=best_row, column=idx2 + 1).value
+        for idx2 in range(n_cols):
+            hv = cell(best_row, idx2)
             hv_lower = str(hv).strip().lower() if hv is not None else ""
             if hv_lower and any(k in hv_lower for k in code_keywords):
                 candidates.append((_data_count(idx2), idx2))
         candidates.sort(reverse=True)
         if candidates and candidates[0][0] > 0:
-            logging.info(f"Sloupec kodu '{ws.cell(row=best_row, column=best_mapping['code']+1).value}' je prazdny - prepinam na sloupec {candidates[0][1]} ('{ws.cell(row=best_row, column=candidates[0][1]+1).value}') s {candidates[0][0]} hodnotami.")
+            logging.info(f"Sloupec kodu '{cell(best_row, best_mapping['code'])}' je prazdny - prepinam na sloupec {candidates[0][1]} ('{cell(best_row, candidates[0][1])}') s {candidates[0][0]} hodnotami.")
             best_mapping["code"] = candidates[0][1]
 
     return best_row, best_mapping

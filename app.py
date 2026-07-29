@@ -71,6 +71,94 @@ logging.info(f"Marketingová databáze úspěšně načtena. Počet modelů: {le
 # Run merge
 merge_databases()
 
+def build_product_info(model_code, color_name="", arguments="", product_name="",
+                       design_name="", row_brand="", material="", size=""):
+    """
+    Sestaví kontext produktu pro generování textů.
+    Sdílená logika pro Excel import i Google Sheets - jediný zdroj pravdy
+    pro značky, typy produktů a stuby chybějících produktů.
+    """
+    if model_code in PRODUCTS_DB:
+        product_info = dict(PRODUCTS_DB[model_code])
+        # Override color with the specific variant from Excel row
+        product_info["all_colors"] = [color_name] if color_name else product_info.get("all_colors", [])
+        if arguments:
+            product_info["sales_arguments"] = arguments
+        if row_brand:
+            product_info["brand"] = row_brand
+        if design_name:
+            product_info["design_name"] = design_name
+    else:
+        # Build stub for missing product.
+        # Pokud Excel obsahuje nazev produktu (napr. "Osuška", "Župan"), pouzij ho -
+        # ne kazdy produkt je podprsenka a strihova detekce prádla by AI zmatla.
+        lingerie_words = ("podprsenk", "kalhotk", "prádlo", "pradlo", "body", "korzet", "podvazk", "kosilka", "košilka", "plavky", "braletka", "bralet")
+        is_lingerie = (not product_name) or any(w in product_name.lower() for w in lingerie_words)
+        resolved_brand = row_brand if row_brand else "Triola"
+        is_triola_brand = "triola" in resolved_brand.lower()
+
+        if not is_triola_brand:
+            # CIZI ZNACKA (napr. Sassa): zadne "Triola", zadny kod ani nazev kolekce v nazvu.
+            # Heureka format: Znacka (velke pocatecni pismeno) + typ produktu.
+            resolved_brand = resolved_brand[:1].upper() + resolved_brand[1:]
+            title_parts = [resolved_brand, (product_name.strip().lower() if product_name else "produkt")]
+            if design_name:
+                title_parts.append(design_name.strip().title())
+            details = [d for d in [f"Materiál: {material}" if material else "", f"Velikost: {size}" if size else ""] if d]
+            product_info = {
+                "model_code": model_code,
+                "generic_title": " ".join(title_parts),
+                "brand": resolved_brand,
+                "design_name": design_name,
+                "type": (product_name.strip().capitalize() if product_name else "Produkt"),
+                "cut_name": (product_name.strip().capitalize() if product_name else "Produkt"),
+                "characteristics": ". ".join(details) if details else f"Produkt značky {resolved_brand}.",
+                "benefits": details,
+                "docx_description": "",
+                "recommendation": f"Produkt značky {resolved_brand} (NE Triola). Nepoužívej názvy střihů Triola ani claimy Trioly. Vycházej z prodejních argumentů, materiálu a velikosti.",
+                "all_colors": [color_name] if color_name else ["standardní"],
+                "combined_description": "",
+                "sales_arguments": arguments
+            }
+        elif product_name and not is_lingerie:
+            # Obecny produkt (osuska, zupan, doplnek...) - zadna podprsenkova terminologie
+            details = [d for d in [f"Materiál: {material}" if material else "", f"Velikost: {size}" if size else ""] if d]
+            product_info = {
+                "model_code": model_code,
+                "generic_title": f"{product_name.strip().capitalize()} Triola {model_code}",
+                "brand": "Triola",
+                "type": product_name.strip().capitalize(),
+                "cut_name": product_name.strip().capitalize(),
+                "characteristics": ". ".join(details) if details else f"{product_name.strip().capitalize()} značky Triola.",
+                "benefits": [d for d in details] or [],
+                "docx_description": "",
+                "recommendation": "Piš věcně o tomto typu produktu. NEPOUŽÍVEJ terminologii spodního prádla (košíčky, kostice, ramínka, obvod). Vycházej z materiálu, velikosti a prodejních argumentů.",
+                "all_colors": [color_name] if color_name else ["standardní"],
+                "combined_description": "",
+                "sales_arguments": arguments
+            }
+        else:
+            cut_data = feed_parser.detect_cut_properties(model_code, f"Podprsenka Triola {model_code}", "")
+            base_name = product_name.strip().capitalize() if product_name else ("Podprsenka" if not model_code.startswith('3') else "Kalhotky")
+            product_info = {
+                "model_code": model_code,
+                "generic_title": f"{base_name} Triola {model_code}",
+                "brand": "Triola",
+                "type": "Dámské spodní prádlo" if not model_code.startswith('3') else "Dámské kalhotky",
+                "cut_name": cut_data["cut_name"],
+                "characteristics": cut_data["characteristics"],
+                "benefits": cut_data["benefits"],
+                "docx_description": cut_data.get("docx_description", ""),
+                "recommendation": cut_data.get("recommendation", ""),
+                "all_colors": [color_name] if color_name else ["standardní"],
+                "combined_description": "",
+                "sales_arguments": arguments
+            }
+        if material and "Materiál" not in str(product_info.get("characteristics", "")):
+            product_info["characteristics"] = (str(product_info.get("characteristics", "")) + f" Materiál: {material}.").strip()
+    return product_info
+
+
 @app.route('/')
 def index():
     """Renders the main application page."""
@@ -263,87 +351,12 @@ def batch_process_row():
     if not os.path.exists(file_path):
         return jsonify({"success": False, "error": "Soubor neexistuje."}), 400
         
-    # 1. Resolve product context
-    # Check if model is in products db
-    if model_code in PRODUCTS_DB:
-        product_info = dict(PRODUCTS_DB[model_code])
-        # Override color with the specific variant from Excel row
-        product_info["all_colors"] = [color_name] if color_name else product_info.get("all_colors", [])
-        if arguments:
-            product_info["sales_arguments"] = arguments
-        if row_brand:
-            product_info["brand"] = row_brand
-        if design_name:
-            product_info["design_name"] = design_name
-    else:
-        # Build stub for missing product.
-        # Pokud Excel obsahuje nazev produktu (napr. "Osuška", "Župan"), pouzij ho -
-        # ne kazdy produkt je podprsenka a strihova detekce prádla by AI zmatla.
-        lingerie_words = ("podprsenk", "kalhotk", "prádlo", "pradlo", "body", "korzet", "podvazk", "kosilka", "košilka", "plavky", "braletka", "bralet")
-        is_lingerie = (not product_name) or any(w in product_name.lower() for w in lingerie_words)
-        resolved_brand = row_brand if row_brand else "Triola"
-        is_triola_brand = "triola" in resolved_brand.lower()
+    # 1. Resolve product context (sdílená funkce pro Excel i Google Sheets)
+    product_info = build_product_info(
+        model_code=model_code, color_name=color_name, arguments=arguments,
+        product_name=product_name, design_name=design_name, row_brand=row_brand,
+        material=material, size=size)
 
-        if not is_triola_brand:
-            # CIZI ZNACKA (napr. Sassa): zadne "Triola", zadny kod ani nazev kolekce v nazvu.
-            # Heureka format: Znacka (velke pocatecni pismeno) + typ produktu.
-            resolved_brand = resolved_brand[:1].upper() + resolved_brand[1:]
-            title_parts = [resolved_brand, (product_name.strip().lower() if product_name else "produkt")]
-            if design_name:
-                title_parts.append(design_name.strip().title())
-            details = [d for d in [f"Materiál: {material}" if material else "", f"Velikost: {size}" if size else ""] if d]
-            product_info = {
-                "model_code": model_code,
-                "generic_title": " ".join(title_parts),
-                "brand": resolved_brand,
-                "design_name": design_name,
-                "type": (product_name.strip().capitalize() if product_name else "Produkt"),
-                "cut_name": (product_name.strip().capitalize() if product_name else "Produkt"),
-                "characteristics": ". ".join(details) if details else f"Produkt značky {resolved_brand}.",
-                "benefits": details,
-                "docx_description": "",
-                "recommendation": f"Produkt značky {resolved_brand} (NE Triola). Nepoužívej názvy střihů Triola ani claimy Trioly. Vycházej z prodejních argumentů, materiálu a velikosti.",
-                "all_colors": [color_name] if color_name else ["standardní"],
-                "combined_description": "",
-                "sales_arguments": arguments
-            }
-        elif product_name and not is_lingerie:
-            # Obecny produkt (osuska, zupan, doplnek...) - zadna podprsenkova terminologie
-            details = [d for d in [f"Materiál: {material}" if material else "", f"Velikost: {size}" if size else ""] if d]
-            product_info = {
-                "model_code": model_code,
-                "generic_title": f"{product_name.strip().capitalize()} Triola {model_code}",
-                "brand": "Triola",
-                "type": product_name.strip().capitalize(),
-                "cut_name": product_name.strip().capitalize(),
-                "characteristics": ". ".join(details) if details else f"{product_name.strip().capitalize()} značky Triola.",
-                "benefits": [d for d in details] or [],
-                "docx_description": "",
-                "recommendation": "Piš věcně o tomto typu produktu. NEPOUŽÍVEJ terminologii spodního prádla (košíčky, kostice, ramínka, obvod). Vycházej z materiálu, velikosti a prodejních argumentů.",
-                "all_colors": [color_name] if color_name else ["standardní"],
-                "combined_description": "",
-                "sales_arguments": arguments
-            }
-        else:
-            cut_data = feed_parser.detect_cut_properties(model_code, f"Podprsenka Triola {model_code}", "")
-            base_name = product_name.strip().capitalize() if product_name else ("Podprsenka" if not model_code.startswith('3') else "Kalhotky")
-            product_info = {
-                "model_code": model_code,
-                "generic_title": f"{base_name} Triola {model_code}",
-                "brand": "Triola",
-                "type": "Dámské spodní prádlo" if not model_code.startswith('3') else "Dámské kalhotky",
-                "cut_name": cut_data["cut_name"],
-                "characteristics": cut_data["characteristics"],
-                "benefits": cut_data["benefits"],
-                "docx_description": cut_data.get("docx_description", ""),
-                "recommendation": cut_data.get("recommendation", ""),
-                "all_colors": [color_name] if color_name else ["standardní"],
-                "combined_description": "",
-                "sales_arguments": arguments
-            }
-        if material and "Materiál" not in str(product_info.get("characteristics", "")):
-            product_info["characteristics"] = (str(product_info.get("characteristics", "")) + f" Materiál: {material}.").strip()
-        
     # 2. Perform copywriting generation for all 6 columns in one single call
     try:
         results = generate_batch_row_data(
@@ -594,6 +607,106 @@ def seo_download(filename):
     from werkzeug.utils import secure_filename
     clean_name = secure_filename(filename)
     return send_from_directory(app.config['UPLOAD_FOLDER'], clean_name, as_attachment=True)
+
+
+# ==================== GOOGLE SHEETS INTEGRACE ====================
+
+@app.route('/api/sheets/status', methods=['GET'])
+def sheets_status():
+    """Stav připojení ke Google Sheets (nic nemění)."""
+    try:
+        import sheets_service
+        return jsonify(sheets_service.check_access())
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e), "service_account": ""}), 200
+
+
+@app.route('/api/sheets/list', methods=['GET'])
+def sheets_list():
+    """Seznam listů v hlavní tabulce."""
+    try:
+        import sheets_service
+        return jsonify({"success": True, **sheets_service.list_sheets()})
+    except Exception as e:
+        logging.error(f"Chyba při načítání listů: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/sheets/rows', methods=['GET'])
+def sheets_rows():
+    """Načte řádky vybraného listu + ukáže, do kterých sloupců se bude zapisovat."""
+    sheet_name = request.args.get('sheet', '')
+    if not sheet_name:
+        return jsonify({"success": False, "error": "Chybí název listu."}), 400
+    try:
+        import sheets_service
+        data = sheets_service.read_sheet(sheet_name)
+        cols = sheets_service.resolve_output_columns(sheet_name, create_missing=False)
+        target = {k: (sheets_service.col_letter(v) if v != -1 else "(vytvoří se)")
+                  for k, v in cols["columns"].items()}
+        return jsonify({
+            "success": True,
+            "sheet": sheet_name,
+            "header_row": data["header_row"],
+            "headers": data["headers"],
+            "rows": data["rows"],
+            "total_rows": len(data["rows"]),
+            "target_columns": target,
+        })
+    except Exception as e:
+        logging.error(f"Chyba při čtení listu {sheet_name}: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/sheets/process-row', methods=['POST'])
+def sheets_process_row():
+    """Vygeneruje texty pro jeden řádek listu a zapíše je zpět do tabulky."""
+    data = request.json or {}
+    sheet_name = data.get('sheet', '')
+    row_num = data.get('row_num')
+    if not sheet_name or row_num is None:
+        return jsonify({"success": False, "error": "Chybí list nebo číslo řádku."}), 400
+
+    model_code = data.get('model_code', '')
+    color_name = data.get('color_name', '')
+    arguments = data.get('arguments', '')
+    product_name = data.get('product_name', '').strip()
+    design_name = data.get('design_name', '').strip()
+    row_brand = data.get('brand', '').strip()
+    material = data.get('material', '').strip()
+    size = data.get('size', '').strip()
+    model_key = data.get('model_key', 'claude-sonnet-5')
+    tone_key = data.get('tone_key', 'empaticky')
+
+    try:
+        import sheets_service
+        # 1. Sestav kontext produktu (stejná logika jako u Excel importu)
+        product_info = build_product_info(
+            model_code=model_code, color_name=color_name, arguments=arguments,
+            product_name=product_name, design_name=design_name, row_brand=row_brand,
+            material=material, size=size)
+
+        # 2. Vygeneruj
+        results = generate_batch_row_data(
+            product_info=product_info, model_key=model_key, tone_key=tone_key,
+            use_simulation=data.get('use_simulation', False))
+
+        # 3. Zapiš zpět - jen do povolených sloupců
+        cols = sheets_service.resolve_output_columns(sheet_name, create_missing=True)
+        written = sheets_service.write_row_results(
+            sheet_name, int(row_num), results, cols["columns"])
+
+        return jsonify({
+            "success": True, "row_num": row_num,
+            "written_cells": written, "created_columns": cols["created"],
+            "eshop_name": results.get("eshop_name", ""),
+            "short_name": results.get("short_name", ""),
+            "meta_title": results.get("meta_title", ""),
+        })
+    except Exception as e:
+        logging.error(f"Chyba při zpracování řádku {row_num} v listu {sheet_name}: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
