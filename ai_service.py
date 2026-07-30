@@ -17,6 +17,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 MODEL_MAPPING = {
     # Anthropic
     "claude-sonnet-5": "claude-sonnet-5",
+    "claude-opus-5": "claude-opus-5",
     "claude-sonnet-4-6": "claude-sonnet-4-6",
     "claude-opus-4-8": "claude-opus-4-8",
     "claude-sonnet-4-5": "claude-sonnet-4-5-20250929",
