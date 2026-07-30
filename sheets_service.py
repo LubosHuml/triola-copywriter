@@ -243,7 +243,8 @@ def read_sheet_bundle(sheet_name, spreadsheet_id=DEFAULT_SPREADSHEET_ID, max_row
             "color_name": color_raw,
             "arguments": cell(row, mapping.get("arguments", -1)),
             "product_name": cell(row, mapping.get("product_name", -1)),
-            "design_name": cell(row, mapping.get("design_name", -1)),
+            "design_name": (cell(row, mapping.get("design_name", -1))
+                            or cell(row, mapping.get("collection", -1))),
             "brand": (cell(row, mapping.get("brand", -1)) or sheet_brand
                       or brand_from_code(code)),
             "material": cell(row, mapping.get("material", -1)),
@@ -420,7 +421,8 @@ def read_sheet(sheet_name, spreadsheet_id=DEFAULT_SPREADSHEET_ID, max_rows=2000)
             "color_name": color_raw,
             "arguments": cell(row, mapping.get("arguments", -1)),
             "product_name": cell(row, mapping.get("product_name", -1)),
-            "design_name": cell(row, mapping.get("design_name", -1)),
+            "design_name": (cell(row, mapping.get("design_name", -1))
+                            or cell(row, mapping.get("collection", -1))),
             "brand": row_brand,
             "material": cell(row, mapping.get("material", -1)),
             "size": cell(row, mapping.get("size", -1)),

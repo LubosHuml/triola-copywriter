@@ -57,7 +57,9 @@ def row_needs_work(row, row_values, columns):
     args = (row.get("arguments") or "").strip()
     if len(args) < MIN_ARGUMENTS_LEN:
         return False, "chybí prodejní argumenty", []
-    if not (row.get("product_name") or "").strip():
+    brand = (row.get("brand") or "").strip().lower()
+    if not (row.get("product_name") or "").strip() and brand not in ("", "triola"):
+        # U cizi znacky neumime typ odvodit z kodu - bez sloupce PRODUKT radek preskocime.
         return False, "chybí typ produktu", []
 
     missing = []

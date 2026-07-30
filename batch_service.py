@@ -204,7 +204,7 @@ def detect_header_mapping(rows):
                     current_map["brand"] = idx
                     score += 2
             # Nazev designu/kolekce vyrobce (ne e-shop nazev, ne SK mutace)
-            elif ("název" in val_lower or "nazev" in val_lower) and "shop" not in val_lower and " sk" not in val_lower and "kolekce" not in val_lower:
+            elif ("název" in val_lower or "nazev" in val_lower) and "shop" not in val_lower and " sk" not in val_lower and "kolekce" not in val_lower and "krátký" not in val_lower and "kratky" not in val_lower and "meta" not in val_lower:
                 if current_map["design_name"] == -1:
                     current_map["design_name"] = idx
                     score += 2
