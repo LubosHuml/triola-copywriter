@@ -184,6 +184,76 @@ Každý příspěvek musí obsahovat:
 - 4-5 relevantních hashtagů (např. #triolacz #spodnipradlo #bodypositivity #ceskaznacka)."""
 }
 
+# Mapa marketingovych barev na SEO vykonne ekvivalenty.
+# V NAZVU a META TITLE se pouziva SEO barva (lide ji hledaji),
+# marketingovy nazev smi zaznit v popisu.
+SEO_COLOR_MAP = {
+    "dračí ovoce": "sytě růžová",
+    "petrolejová": "tmavě zelená",
+    "petrol": "tmavě zelená",
+    "pudr": "pudrově růžová",
+    "pudrová": "pudrově růžová",
+    "écru": "krémová",
+    "ecru": "krémová",
+    "ivory": "smetanová",
+    "champagne": "béžová",
+    "šampaň": "béžová",
+    "nude": "tělová",
+    "skin": "tělová",
+    "marsala": "vínová",
+    "bordó": "vínová",
+    "bordeaux": "vínová",
+    "burgundy": "vínová",
+    "antracit": "tmavě šedá",
+    "antracitová": "tmavě šedá",
+    "grafit": "tmavě šedá",
+    "grafitová": "tmavě šedá",
+    "khaki": "olivově zelená",
+    "oliva": "olivově zelená",
+    "lila": "světle fialová",
+    "levandulová": "světle fialová",
+    "fuchsia": "sytě růžová",
+    "fuchsiová": "sytě růžová",
+    "malinová": "sytě růžová",
+    "lososová": "světle růžová",
+    "korálová": "růžová",
+    "mentolová": "světle zelená",
+    "cappuccino": "béžová",
+    "mocca": "hnědá",
+    "moka": "hnědá",
+    "karamelová": "béžová",
+    "noční modrá": "tmavě modrá",
+    "inkoustová": "tmavě modrá",
+    "půlnoční modrá": "tmavě modrá",
+    "denim": "modrá",
+    "jeans": "modrá",
+}
+
+
+def color_prompt_block(colors):
+    """
+    Sestavi instrukci k barve pro prompt.
+    - prazdna/zadna barva -> texty bez barvy (nikdy 'standardni')
+    - marketingova barva -> doplni SEO ekvivalent pro nazev a meta title
+    """
+    colors = [c for c in (colors or []) if str(c).strip()
+              and str(c).strip().lower() not in ("standardní", "standardni", "none")]
+    if not colors:
+        return ("BARVA: není uvedena. Název produktu, popisy i metadata piš BEZ zmínky "
+                "o barvě. NIKDY nepiš 'standardní barva' ani barvu nevymýšlej.")
+    parts = []
+    for c in colors:
+        seo = SEO_COLOR_MAP.get(str(c).strip().lower())
+        if seo and seo != str(c).strip().lower():
+            parts.append(f"{c} (do NÁZVU PRODUKTU a META TITLE použij SEO variantu: "
+                         f"'{seo}'; marketingový název '{c}' můžeš zmínit v popisu)")
+        else:
+            parts.append(str(c))
+    return ("DOSTUPNÉ BARVY: " + "; ".join(parts) +
+            "\nPRAVIDLO: V názvu a meta title vždy hledaná (SEO) podoba barvy. "
+            "V celém textu piš VÝHRADNĚ o této barvě - žádné jiné barvy z podkladů.")
+
+
 def execute_with_retry(api_func, *args, max_retries=5, initial_delay=2.0, backoff_factor=2.0, **kwargs):
     """
     Spustí zadanou API funkci s automatickým opakováním v případě přetížení nebo překročení limitů.
@@ -302,7 +372,7 @@ def generate_copywriting(product_info, format_type, model_key, tone_key, length_
     # Build prompt context
     prod_title = product_info.get("generic_title", "Podprsenka Triola")
     prod_code = product_info.get("model_code", "")
-    prod_colors = ", ".join(product_info.get("all_colors", ["standardní"]))
+    prod_colors = ", ".join([c for c in product_info.get("all_colors", []) if str(c).strip()]) or "není uvedena"
     prod_cut = product_info.get("cut_name", "Neznámý střih")
     prod_char = product_info.get("characteristics", "")
     prod_benefits = "\n - " + "\n - ".join(product_info.get("benefits", [])) if product_info.get("benefits") else ""
@@ -371,8 +441,7 @@ CHARAKTERISTIKA: {prod_char}
 OFICIÁLNÍ KONSTRUKČNÍ SPECIFIKACE STŘIHU (z Wordu): {prod_docx if prod_docx else 'Není specifikováno'}
 KLÍČOVÉ VÝHODY: {prod_benefits}
 DOPORUČENÉ PRODEJNÍ ARGUMENTY A TIPY STYLISTKY: {prod_recommendation if prod_recommendation else 'Nejsou specifikovány'}
-DOSTUPNÉ BARVY: {prod_colors}
-DŮLEŽITÉ UPOZORNĚNÍ K BARVĚ: V celém textu piš VÝHRADNĚ o barvě uvedené v poli "DOSTUPNÉ BARVY" (tj. {prod_colors}). Ignoruj jakékoliv jiné barvy zmíněné v původním popisu produktu nebo v marketingových podkladech, pokud se liší od této zadané barvy. Například pokud je zadaná barva "{prod_colors}" (např. lilková, bordó), nesmí se v textu objevit slovo "černá" nebo "bílá" z původního popisu!
+{color_prompt_block(product_info.get("all_colors"))}
 DŮLEŽITÉ UPOZORNĚNÍ K NÁZVŮM KOLEKCÍ: V textu NIKDY neuváděj ani nezmiňuj žádné názvy kolekcí (např. Selena, Tina, Olivia, atd.). Pokud se název jakékoliv kolekce objeví v původním popisu nebo v marketingových podkladech, ignoruj ho a nezmiňuj.
 PŮVODNÍ POPIS PRODUKTU: {prod_desc_clean}
 -----------------
@@ -619,7 +688,8 @@ def generate_batch_row_data(product_info, model_key, tone_key, use_simulation=Fa
     """
     prod_title = product_info.get("generic_title", "Podprsenka Triola")
     prod_code = product_info.get("model_code", "")
-    prod_colors = ", ".join(product_info.get("all_colors", ["standardní"]))
+    color_block = color_prompt_block(product_info.get("all_colors"))
+    prod_colors = ", ".join([c for c in product_info.get("all_colors", []) if str(c).strip()]) or "není uvedena"
     prod_cut = product_info.get("cut_name", "Neznámý střih")
     prod_char = product_info.get("characteristics", "")
     prod_benefits = "\n - " + "\n - ".join(product_info.get("benefits", [])) if product_info.get("benefits") else ""
@@ -720,8 +790,7 @@ CHARAKTERISTIKA: {prod_char}
 OFICIÁLNÍ KONSTRUKČNÍ SPECIFIKACE STŘIHU: {prod_docx if prod_docx else 'Není k dispozici'}
 KLÍČOVÉ VÝHODY: {prod_benefits}
 DOPORUČENÉ PRODEJNÍ ARGUMENTY A TIPY STYLISTKY: {prod_recommendation if prod_recommendation else 'Nejsou k dispozici'}
-DOSTUPNÉ BARVY: {prod_colors}
-DŮLEŽITÉ UPOZORNĚNÍ K BARVĚ: Piš výhradně o barvě {prod_colors}. Ignoruj jakékoliv jiné barvy zmíněné v původním popisu produktu nebo v marketingových podkladech.
+{color_block}
 DŮLEŽITÉ UPOZORNĚNÍ K NÁZVŮM KOLEKCÍ (platí POUZE pro produkty značky Triola): V textu neuváděj názvy kolekcí Triola (např. Selena, Tina, Olivia). U cizích značek se řiď blokem PRAVIDLA PRO CIZÍ ZNAČKU.
 {brand_block}ZNAČKA V TEXTECH: Název značky piš VŽDY s velkým počátečním písmenem (Triola, Sassa) — v názvu produktu, v popisech i v metadatech. Nikdy malými písmeny.
 DŮLEŽITÉ UPOZORNĚNÍ K TYPU PRODUKTU: Piš o typu produktu uvedeném v NÁZEV PRODUKTU. Pokud produkt NENÍ spodní prádlo (např. osuška, župan, doplněk), NEPOUŽÍVEJ terminologii podprsenek (košíčky, kostice, ramínka, obvod, bra-fitting) a strukturu přizpůsob charakteru produktu (materiál, rozměry, použití, péče).

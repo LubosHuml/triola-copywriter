@@ -78,6 +78,18 @@ def build_product_info(model_code, color_name="", arguments="", product_name="",
     Sdílená logika pro Excel import i Google Sheets - jediný zdroj pravdy
     pro značky, typy produktů a stuby chybějících produktů.
     """
+    # Kody z tabulek mivaji tvar "22859/88" (model/kod barvy) - do databaze
+    # se hleda zakladni model. Kdyz radek nema barvu, dotahne se z feedu.
+    model_code = str(model_code or "").strip()
+    if model_code not in PRODUCTS_DB and "/" in model_code:
+        base_code = model_code.split("/")[0].strip()
+        if base_code in PRODUCTS_DB:
+            if not (color_name or "").strip():
+                db_colors = PRODUCTS_DB[base_code].get("all_colors") or []
+                if len(db_colors) == 1:
+                    color_name = db_colors[0]   # jednoznacna varianta z feedu
+            model_code = base_code
+
     if model_code in PRODUCTS_DB:
         product_info = dict(PRODUCTS_DB[model_code])
         # Override color with the specific variant from Excel row
@@ -116,7 +128,7 @@ def build_product_info(model_code, color_name="", arguments="", product_name="",
                 "benefits": details,
                 "docx_description": "",
                 "recommendation": f"Produkt značky {resolved_brand} (NE Triola). Nepoužívej názvy střihů Triola ani claimy Trioly. Vycházej z prodejních argumentů, materiálu a velikosti.",
-                "all_colors": [color_name] if color_name else ["standardní"],
+                "all_colors": [color_name] if color_name else [],
                 "combined_description": "",
                 "sales_arguments": arguments
             }
@@ -133,7 +145,7 @@ def build_product_info(model_code, color_name="", arguments="", product_name="",
                 "benefits": [d for d in details] or [],
                 "docx_description": "",
                 "recommendation": "Piš věcně o tomto typu produktu. NEPOUŽÍVEJ terminologii spodního prádla (košíčky, kostice, ramínka, obvod). Vycházej z materiálu, velikosti a prodejních argumentů.",
-                "all_colors": [color_name] if color_name else ["standardní"],
+                "all_colors": [color_name] if color_name else [],
                 "combined_description": "",
                 "sales_arguments": arguments
             }
@@ -150,7 +162,7 @@ def build_product_info(model_code, color_name="", arguments="", product_name="",
                 "benefits": cut_data["benefits"],
                 "docx_description": cut_data.get("docx_description", ""),
                 "recommendation": cut_data.get("recommendation", ""),
-                "all_colors": [color_name] if color_name else ["standardní"],
+                "all_colors": [color_name] if color_name else [],
                 "combined_description": "",
                 "sales_arguments": arguments
             }
