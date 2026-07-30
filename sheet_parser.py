@@ -75,25 +75,41 @@ def build_marketing_db(force_update=False):
     marketing_db = {}
 
     try:
-        wb = openpyxl.load_workbook(EXCEL_FILE, data_only=True)
-        
+        # read_only=True: streamovane cteni - nezvedne pamet o gigabajty
+        # (plny rezim openpyxl drzi cely 100MB sesit vcetne stylu v RAM -> OOM na Renderu)
+        wb = openpyxl.load_workbook(EXCEL_FILE, data_only=True, read_only=True)
+
         # We focus on sheets containing "Triola"
         triola_sheets = [s for s in wb.sheetnames if "triola" in s.lower()]
-        
+
         for sheet_name in triola_sheets:
             logging.info(f"Zpracování listu: {sheet_name}")
             ws = wb[sheet_name]
-            
+
+            # V read-only rezimu je nahodny pristup pomaly - nacteme hodnoty
+            # listu jednou do pameti (jen hodnoty, bez stylu a formatovani).
+            sheet_rows = [list(row) for row in ws.iter_rows(values_only=True)]
+
+            def _cell(r, c):
+                """1-based radek i sloupec nad materializovanymi hodnotami."""
+                if r - 1 >= len(sheet_rows):
+                    return None
+                row = sheet_rows[r - 1]
+                return row[c - 1] if c - 1 < len(row) else None
+
+            max_row = len(sheet_rows)
+
             # Identify columns
             # Some sheets have headers on row 1, some on row 2
             header_row = 1
-            headers = [str(cell.value).strip().lower() if cell.value is not None else "" for cell in ws[1]]
-            
+            first = sheet_rows[0] if sheet_rows else []
+            headers = [str(v).strip().lower() if v is not None else "" for v in first]
+
             # If row 1 is mostly empty, check row 2
             non_empty_headers = [h for h in headers if h]
-            if len(non_empty_headers) < 3 and ws.max_row > 1:
+            if len(non_empty_headers) < 3 and max_row > 1:
                 header_row = 2
-                headers = [str(cell.value).strip().lower() if cell.value is not None else "" for cell in ws[2]]
+                headers = [str(v).strip().lower() if v is not None else "" for v in sheet_rows[1]]
 
             # Map columns to indices (0-indexed)
             col_map = {
@@ -147,22 +163,22 @@ def build_marketing_db(force_update=False):
 
             # Iterate over data rows
             start_row = header_row + 1
-            for r in range(start_row, ws.max_row + 1):
-                raw_code = ws.cell(row=r, column=col_map["code"] + 1).value
+            for r in range(start_row, max_row + 1):
+                raw_code = _cell(r, col_map["code"] + 1)
                 model_code = extract_model_code(raw_code)
                 
                 if not model_code:
                     continue
 
                 # Read fields
-                cut = ws.cell(row=r, column=col_map["cut"] + 1).value if col_map["cut"] != -1 else None
-                collection = ws.cell(row=r, column=col_map["collection"] + 1).value if col_map["collection"] != -1 else None
-                arguments = ws.cell(row=r, column=col_map["arguments"] + 1).value if col_map["arguments"] != -1 else None
-                target_group = ws.cell(row=r, column=col_map["target_group"] + 1).value if col_map["target_group"] != -1 else None
-                desc1 = ws.cell(row=r, column=col_map["description1"] + 1).value if col_map["description1"] != -1 else None
-                desc2 = ws.cell(row=r, column=col_map["description2"] + 1).value if col_map["description2"] != -1 else None
-                meta_title = ws.cell(row=r, column=col_map["meta_title"] + 1).value if col_map["meta_title"] != -1 else None
-                meta_desc = ws.cell(row=r, column=col_map["meta_desc"] + 1).value if col_map["meta_desc"] != -1 else None
+                cut = _cell(r, col_map["cut"] + 1) if col_map["cut"] != -1 else None
+                collection = _cell(r, col_map["collection"] + 1) if col_map["collection"] != -1 else None
+                arguments = _cell(r, col_map["arguments"] + 1) if col_map["arguments"] != -1 else None
+                target_group = _cell(r, col_map["target_group"] + 1) if col_map["target_group"] != -1 else None
+                desc1 = _cell(r, col_map["description1"] + 1) if col_map["description1"] != -1 else None
+                desc2 = _cell(r, col_map["description2"] + 1) if col_map["description2"] != -1 else None
+                meta_title = _cell(r, col_map["meta_title"] + 1) if col_map["meta_title"] != -1 else None
+                meta_desc = _cell(r, col_map["meta_desc"] + 1) if col_map["meta_desc"] != -1 else None
 
                 # Clean cell string values
                 def clean_val(val):
@@ -209,6 +225,11 @@ def build_marketing_db(force_update=False):
                 if meta_title and meta_title not in entry["meta_titles"]: entry["meta_titles"].append(meta_title)
                 if meta_desc and meta_desc not in entry["meta_descriptions"]: entry["meta_descriptions"].append(meta_desc)
                 if sheet_name not in entry["sources"]: entry["sources"].append(sheet_name)
+
+        try:
+            wb.close()
+        except Exception:
+            pass
 
         # Save compiled database to JSON cache
         with open(MARKETING_CACHE_FILE, "w", encoding="utf-8") as f:
