@@ -3,10 +3,9 @@ import logging
 import re
 import time
 from dotenv import load_dotenv
-import openai
 import anthropic
-from google import genai
-from google.genai import types
+# openai a google-genai se importuji az pri prvnim pouziti (lazy) - grpc stack
+# Gemini SDK sam o sobe zabira ~150 MB RAM, coz na 512MB Renderu zpusobovalo OOM.
 
 load_dotenv()
 
@@ -217,6 +216,7 @@ def execute_with_retry(api_func, *args, max_retries=5, initial_delay=2.0, backof
 
 def generate_with_openai(api_key, model, system_prompt, user_prompt):
     """Call OpenAI API using modern SDK client."""
+    import openai
     client = openai.OpenAI(api_key=api_key)
     response = client.chat.completions.create(
         model=model,
@@ -257,6 +257,8 @@ def generate_with_anthropic(api_key, model, system_prompt, user_prompt):
 
 def generate_with_gemini(api_key, model, system_prompt, user_prompt):
     """Call Google Gemini API using new google-genai client."""
+    from google import genai
+    from google.genai import types
     client = genai.Client(api_key=api_key)
     response = client.models.generate_content(
         model=model,
