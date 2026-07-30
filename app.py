@@ -80,14 +80,15 @@ def build_product_info(model_code, color_name="", arguments="", product_name="",
     """
     # Kody z tabulek mivaji tvar "22859/88" (model/kod barvy) - do databaze
     # se hleda zakladni model. Kdyz radek nema barvu, dotahne se z feedu.
+    # Kod barvy za lomitkem (28859/88) se do textu NIKDY nepropisuje -
+    # pro nazvy i hledani v databazi se pouziva zakladni cislo fazony.
+    # Barvu urcuje sloupec Barva v listu nebo ciselnik BARVY (kod -> nazev);
+    # z feedu se stare barvy NEDOTAHUJI (novou sezonni variantu web jeste nezna).
+    import re as _re
     model_code = str(model_code or "").strip()
-    if model_code not in PRODUCTS_DB and "/" in model_code:
-        base_code = model_code.split("/")[0].strip()
-        if base_code in PRODUCTS_DB:
-            # POZOR: barva se z feedu NEDOTAHUJE - kod za lomitkem oznacuje
-            # NOVOU sezonni variantu, ktera na webu jeste neni. Barvu urcuje
-            # sloupec Barva v listu nebo mapovani na listu BARVY (kod -> nazev).
-            model_code = base_code
+    _m = _re.match(r"^(.*?)/\d{2,3}$", model_code)
+    if _m and _m.group(1).strip():
+        model_code = _m.group(1).strip()
 
     if model_code in PRODUCTS_DB:
         product_info = dict(PRODUCTS_DB[model_code])
