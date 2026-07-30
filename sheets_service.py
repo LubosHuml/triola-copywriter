@@ -237,6 +237,8 @@ def read_sheet_bundle(sheet_name, spreadsheet_id=DEFAULT_SPREADSHEET_ID, max_row
         color_raw = cell(row, mapping.get("color", -1))
         if color_raw.endswith(".0"):
             color_raw = color_raw[:-2]
+        if not color_raw:
+            color_raw = resolve_color_from_code(code)
         rows.append({
             "row_num": r_i + 1,
             "model_code": code,
@@ -409,6 +411,8 @@ def read_sheet(sheet_name, spreadsheet_id=DEFAULT_SPREADSHEET_ID, max_rows=2000)
         color_raw = cell(row, mapping.get("color", -1))
         if color_raw.endswith(".0"):
             color_raw = color_raw[:-2]
+        if not color_raw:
+            color_raw = resolve_color_from_code(code)
 
         # znacka: sloupec > nazev listu > prefix kodu (jinak prazdne = Triola)
         row_brand = (cell(row, mapping.get("brand", -1))
@@ -581,6 +585,68 @@ def check_access(spreadsheet_id=DEFAULT_SPREADSHEET_ID):
     except Exception as e:
         result["error"] = f"Zápis selhal (nasdílej tabulku service accountu jako Editor): {e}"
     return result
+
+
+# ---------------------------------------------------------------- list BARVY
+# Kody produktu Triola maji tvar 28859/88, kde /88 je KOD BARVY.
+# Mapovani kodu na nazvy barev zije na listu BARVY primo v tabulce,
+# aby ho mohly kolegyne doplnovat bez zasahu do kodu.
+
+COLOR_SHEET = "BARVY"
+_color_map_cache = {"map": None}
+
+
+def ensure_color_sheet(seed=None, spreadsheet_id=DEFAULT_SPREADSHEET_ID):
+    """Zalozi list BARVY, pokud chybi. seed = dict {kod: nazev|""} pro predvyplneni."""
+    svc = get_service()
+    info = list_sheets(spreadsheet_id)
+    if any(sh["title"] == COLOR_SHEET for sh in info["sheets"]):
+        return False
+    api_call(svc.spreadsheets().batchUpdate(
+        spreadsheetId=spreadsheet_id,
+        body={"requests": [{"addSheet": {"properties": {"title": COLOR_SHEET}}}]}),
+        "založení listu BARVY")
+    rows = [["ČÍSELNÍK BAREV — kód za lomítkem v čísle fazóny (např. 28859/88 → kód 88)"],
+            ["Kód barvy", "Název barvy (česky, bude v textech)"]]
+    for code in sorted((seed or {}), key=lambda x: int(x)):
+        rows.append([code, (seed or {}).get(code, "")])
+    api_call(svc.spreadsheets().values().update(
+        spreadsheetId=spreadsheet_id, range=f"{_quote(COLOR_SHEET)}!A1",
+        valueInputOption="RAW", body={"values": rows}), "inicializace listu BARVY")
+    logging.info(f"Založen list BARVY ({len(rows)-2} kódů).")
+    return True
+
+
+def get_color_code_map(spreadsheet_id=DEFAULT_SPREADSHEET_ID, force=False):
+    """Nacte mapovani kod->nazev barvy z listu BARVY (cache na dobu behu)."""
+    if _color_map_cache["map"] is not None and not force:
+        return _color_map_cache["map"]
+    result = {}
+    try:
+        svc = get_service()
+        resp = api_call(svc.spreadsheets().values().get(
+            spreadsheetId=spreadsheet_id, range=f"{_quote(COLOR_SHEET)}!A2:B200"),
+            "čtení listu BARVY")
+        for row in resp.get("values", []):
+            if len(row) >= 2 and str(row[0]).strip() and str(row[1]).strip():
+                code = str(row[0]).strip().lstrip("/")
+                if code.lower() in ("kód barvy", "kod barvy"):
+                    continue
+                result[code] = str(row[1]).strip()
+    except Exception as e:
+        logging.warning(f"List BARVY nedostupný ({str(e)[:80]}) - barvy z kódů se nedoplní.")
+    _color_map_cache["map"] = result
+    return result
+
+
+def resolve_color_from_code(model_code, color_map=None):
+    """Vrati nazev barvy podle kodu za lomitkem, nebo prazdny retezec."""
+    import re as _re
+    mm = _re.search(r"/(\d{2,3})\s*$", str(model_code or ""))
+    if not mm:
+        return ""
+    cmap = color_map if color_map is not None else get_color_code_map()
+    return cmap.get(mm.group(1), "")
 
 
 # ---------------------------------------------------------------- rizeni automatiky

@@ -84,16 +84,15 @@ def build_product_info(model_code, color_name="", arguments="", product_name="",
     if model_code not in PRODUCTS_DB and "/" in model_code:
         base_code = model_code.split("/")[0].strip()
         if base_code in PRODUCTS_DB:
-            if not (color_name or "").strip():
-                db_colors = PRODUCTS_DB[base_code].get("all_colors") or []
-                if len(db_colors) == 1:
-                    color_name = db_colors[0]   # jednoznacna varianta z feedu
+            # POZOR: barva se z feedu NEDOTAHUJE - kod za lomitkem oznacuje
+            # NOVOU sezonni variantu, ktera na webu jeste neni. Barvu urcuje
+            # sloupec Barva v listu nebo mapovani na listu BARVY (kod -> nazev).
             model_code = base_code
 
     if model_code in PRODUCTS_DB:
         product_info = dict(PRODUCTS_DB[model_code])
         # Override color with the specific variant from Excel row
-        product_info["all_colors"] = [color_name] if color_name else product_info.get("all_colors", [])
+        product_info["all_colors"] = [color_name] if color_name else []
         if arguments:
             product_info["sales_arguments"] = arguments
         if row_brand:

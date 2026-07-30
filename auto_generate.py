@@ -62,6 +62,11 @@ def row_needs_work(row, row_values, columns):
         # U cizi znacky neumime typ odvodit z kodu - bez sloupce PRODUKT radek preskocime.
         return False, "chybí typ produktu", []
 
+    # kod s kodem barvy (/88...), ale barva neni ani v listu, ani v ciselniku BARVY
+    import re as _re
+    if not (row.get("color_name") or "").strip() and _re.search(r"/\d{2,3}\s*$", row.get("model_code", "")):
+        return False, "chybí barva (kód není v listu BARVY)", []
+
     missing = []
     for key in REQUIRED_OUTPUTS:
         col = columns.get(key, -1)
