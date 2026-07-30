@@ -708,6 +708,38 @@ def sheets_process_row():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+
+# ==================== AUTOMATIKA (rizeni denniho robota) ====================
+
+@app.route('/api/automation/status', methods=['GET'])
+def automation_status():
+    """Stav automatiky + historie posledních běhů (z řídicího listu AUTOMATIKA)."""
+    try:
+        import sheets_service
+        data = sheets_service.get_run_log(limit=20)
+        data["success"] = True
+        data["schedule"] = "Každý den v 6:00 ráno (letní čas; v zimě 5:00)"
+        data["control_sheet"] = sheets_service.CONTROL_SHEET
+        return jsonify(data)
+    except Exception as e:
+        logging.error(f"Chyba při čtení stavu automatiky: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/automation/toggle', methods=['POST'])
+def automation_toggle():
+    """Zapne/vypne automatické doplňování (zapisuje jen buňku B2 listu AUTOMATIKA)."""
+    data = request.json or {}
+    enabled = bool(data.get('enabled', True))
+    try:
+        import sheets_service
+        sheets_service.set_automation_enabled(enabled)
+        return jsonify({"success": True, "enabled": enabled})
+    except Exception as e:
+        logging.error(f"Chyba při přepínání automatiky: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
     logging.info(f"Spouštění serveru Triola Copywriting AI na portu {port}...")

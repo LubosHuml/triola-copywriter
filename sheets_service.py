@@ -114,7 +114,7 @@ def _is_sk_header(h):
 # ---------------------------------------------------------------- znacka z nazvu listu
 
 # Listy, ktere nejsou produktove nebo obsahuji mix znacek -> znacku neurcujeme
-NON_BRAND_SHEETS = {"ostatní značky", "seznam kw dle zboží", "kakw", "dr.nap"}
+NON_BRAND_SHEETS = {"ostatní značky", "seznam kw dle zboží", "kakw", "dr.nap", "automatika"}
 
 # Tokeny sezon/kolekci, ktere se z nazvu listu odstranuji
 _SEASON_TOKENS = {
@@ -581,6 +581,112 @@ def check_access(spreadsheet_id=DEFAULT_SPREADSHEET_ID):
     return result
 
 
+# ---------------------------------------------------------------- rizeni automatiky
+# List "AUTOMATIKA" v hlavni tabulce = jediny zdroj pravdy pro zapnuto/vypnuto
+# a historii behu. Vidi ho aplikace (lokalne i na Renderu) i robot na GitHubu.
+
+CONTROL_SHEET = "AUTOMATIKA"
+_LOG_HEADER = ["Datum a čas", "Režim", "Model", "Listů", "Vygenerováno řádků",
+               "Zapsáno buněk", "Chyb", "Poznámka"]
+
+
+def ensure_control_sheet(spreadsheet_id=DEFAULT_SPREADSHEET_ID):
+    """Zalozi ridici list AUTOMATIKA, pokud neexistuje. Vraci True, kdyz byl vytvoren."""
+    svc = get_service()
+    info = list_sheets(spreadsheet_id)
+    if any(sh["title"] == CONTROL_SHEET for sh in info["sheets"]):
+        return False
+    api_call(svc.spreadsheets().batchUpdate(
+        spreadsheetId=spreadsheet_id,
+        body={"requests": [{"addSheet": {"properties": {"title": CONTROL_SHEET}}}]}),
+        "založení listu AUTOMATIKA")
+    api_call(svc.spreadsheets().values().batchUpdate(
+        spreadsheetId=spreadsheet_id,
+        body={"valueInputOption": "RAW", "data": [
+            {"range": f"{_quote(CONTROL_SHEET)}!A1",
+             "values": [["AUTOMATICKÉ DOPLŇOVÁNÍ COPYWRITINGU — řídicí list (needitovat ručně kromě B2)"],
+                        ["Stav automatiky (ZAPNUTO / VYPNUTO):", "ZAPNUTO"],
+                        [""],
+                        _LOG_HEADER]}]}),
+        "inicializace listu AUTOMATIKA")
+    logging.info("Založen řídicí list AUTOMATIKA (stav: ZAPNUTO).")
+    return True
+
+
+def get_automation_enabled(spreadsheet_id=DEFAULT_SPREADSHEET_ID):
+    """Precte stav prepinace z B2. Kdyz list chybi, zalozi ho (vychozi ZAPNUTO)."""
+    svc = get_service()
+    try:
+        resp = api_call(svc.spreadsheets().values().get(
+            spreadsheetId=spreadsheet_id, range=f"{_quote(CONTROL_SHEET)}!B2"),
+            "čtení stavu automatiky")
+        val = str(resp.get("values", [[""]])[0][0]).strip().upper()
+        return val not in ("VYPNUTO", "OFF", "NE", "FALSE", "0")
+    except Exception as e:
+        if "Unable to parse range" in str(e) or "not found" in str(e).lower():
+            ensure_control_sheet(spreadsheet_id)
+            return True
+        raise
+
+
+def set_automation_enabled(enabled, spreadsheet_id=DEFAULT_SPREADSHEET_ID):
+    """Zapne/vypne automatiku (zapisuje jen bunku B2 ridiciho listu)."""
+    ensure_control_sheet(spreadsheet_id)
+    svc = get_service()
+    api_call(svc.spreadsheets().values().update(
+        spreadsheetId=spreadsheet_id, range=f"{_quote(CONTROL_SHEET)}!B2",
+        valueInputOption="RAW",
+        body={"values": [["ZAPNUTO" if enabled else "VYPNUTO"]]}),
+        "přepnutí automatiky")
+    logging.info(f"Automatika {'ZAPNUTA' if enabled else 'VYPNUTA'}.")
+    return enabled
+
+
+def append_run_log(mode, model, sheets_count, generated, cells, failed, note="",
+                   spreadsheet_id=DEFAULT_SPREADSHEET_ID):
+    """Prida radek do historie behu na ridicim listu."""
+    import datetime
+    ensure_control_sheet(spreadsheet_id)
+    svc = get_service()
+    row = [datetime.datetime.now().strftime("%d.%m.%Y %H:%M"), mode, model,
+           sheets_count, generated, cells, failed, note[:300]]
+    api_call(svc.spreadsheets().values().append(
+        spreadsheetId=spreadsheet_id, range=f"{_quote(CONTROL_SHEET)}!A4",
+        valueInputOption="RAW", insertDataOption="INSERT_ROWS",
+        body={"values": [row]}), "zápis do historie běhů")
+
+
+def get_run_log(limit=20, spreadsheet_id=DEFAULT_SPREADSHEET_ID):
+    """Vraci poslednich `limit` behu (nejnovejsi prvni) + aktualni stav."""
+    svc = get_service()
+    try:
+        resp = api_call(svc.spreadsheets().values().get(
+            spreadsheetId=spreadsheet_id, range=f"{_quote(CONTROL_SHEET)}!A2:H500"),
+            "čtení historie běhů")
+    except Exception:
+        return {"enabled": True, "runs": [], "control_sheet_exists": False}
+    values = resp.get("values", [])
+    enabled = True
+    if values and len(values[0]) > 1:
+        enabled = str(values[0][1]).strip().upper() not in ("VYPNUTO", "OFF", "NE", "FALSE", "0")
+    runs = []
+    for row in values[3:]:      # od radku 5 dal (za hlavickou logu)
+        if not row or not str(row[0]).strip():
+            continue
+        runs.append({
+            "when": row[0] if len(row) > 0 else "",
+            "mode": row[1] if len(row) > 1 else "",
+            "model": row[2] if len(row) > 2 else "",
+            "sheets": row[3] if len(row) > 3 else "",
+            "generated": row[4] if len(row) > 4 else "",
+            "cells": row[5] if len(row) > 5 else "",
+            "failed": row[6] if len(row) > 6 else "",
+            "note": row[7] if len(row) > 7 else "",
+        })
+    runs.reverse()
+    return {"enabled": enabled, "runs": runs[:limit], "control_sheet_exists": True}
+
+
 if __name__ == "__main__":
     import sys
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -599,5 +705,12 @@ if __name__ == "__main__":
         print("mapping:", d["mapping"])
         for r in d["rows"][:5]:
             print(" ", r)
+    elif cmd == "automation":
+        sub = sys.argv[2] if len(sys.argv) > 2 else "status"
+        if sub == "on":
+            set_automation_enabled(True)
+        elif sub == "off":
+            set_automation_enabled(False)
+        print(json.dumps(get_run_log(10), ensure_ascii=False, indent=1))
     elif cmd == "email":
         print(get_service_account_email() or "(chybi credentials)")

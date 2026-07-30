@@ -40,6 +40,10 @@
                     <i data-lucide="table-2"></i>
                     <span>Google Sheets</span>
                 </button>
+                <button class="nav-item" data-tab="automation">
+                    <i data-lucide="bot"></i>
+                    <span>Automatika</span>
+                </button>
                 <button class="nav-item" data-tab="seo">
                     <i data-lucide="search"></i>
                     <span>SEO Snippety</span>
@@ -498,6 +502,55 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Tab: Automatika -->
+            <section id="tab-automation" class="tab-pane">
+                <div class="panel">
+                    <h2>Automatické doplňování textů</h2>
+                    <p style="color:var(--text-muted); font-size:14px; margin-bottom:16px;">
+                        Robot běží <strong>každý den v 6:00 ráno</strong>, stáhne čerstvý XML feed produktů,
+                        projde aktuální listy (sezóna s rokem 26/27 + trvalé kolekce) a doplní texty
+                        <strong>jen do prázdných buněk</strong>. Hotové texty nikdy nepřepisuje.
+                    </p>
+
+                    <div id="auto-switch-box" style="display:flex; align-items:center; gap:16px; padding:16px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:16px;">
+                        <label class="switch" style="display:inline-flex; align-items:center; gap:10px; cursor:pointer;">
+                            <input type="checkbox" id="auto-enabled-toggle" style="width:20px; height:20px; cursor:pointer;">
+                            <span id="auto-enabled-label" style="font-weight:700; font-size:16px;">Načítám…</span>
+                        </label>
+                        <span id="auto-toggle-note" style="color:var(--text-muted); font-size:13px;"></span>
+                    </div>
+
+                    <div class="info-box" style="font-size:13px;">
+                        <i data-lucide="info"></i>
+                        <span>Přepínač i historie jsou uložené na listu <strong>AUTOMATIKA</strong> přímo v hlavní tabulce
+                        — stav vidí i kolegyně. Ruční spuštění mimo 6:00: GitHub →
+                        <a href="https://github.com/LubosHuml/triola-copywriter/actions/workflows/auto-copywriting.yml" target="_blank">Actions → Run workflow</a>.</span>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-top:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h2 style="margin:0;">Historie běhů</h2>
+                        <button type="button" class="btn secondary-btn" id="auto-refresh-btn">
+                            <i data-lucide="refresh-cw"></i><span>Obnovit</span>
+                        </button>
+                    </div>
+                    <div id="auto-status-text" style="margin:10px 0; color:var(--text-muted);">Načítám…</div>
+                    <div class="table-wrapper" style="max-height:420px; overflow:auto;">
+                        <table class="data-table" style="width:100%;">
+                            <thead>
+                                <tr>
+                                    <th>Datum a čas</th><th>Režim</th><th>Model</th>
+                                    <th>Listů</th><th>Řádků</th><th>Buněk</th><th>Chyb</th><th>Poznámka</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auto-log-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
 
 
             <!-- Tab: SEO Snippety -->

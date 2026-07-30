@@ -157,6 +157,8 @@ def main():
     ap.add_argument("--model", default="claude-opus-5", help="AI model")
     ap.add_argument("--tone", default="empaticky", help="tón textů")
     ap.add_argument("--no-basic", action="store_true", help="vynechat trvalé kolekce (bez roku)")
+    ap.add_argument("--force", action="store_true", help="spustit i při VYPNUTÉ automatice")
+    ap.add_argument("--no-feed-update", action="store_true", help="nestahovat čerstvý XML feed")
     args = ap.parse_args()
 
     try:
@@ -170,6 +172,36 @@ def main():
                  f"— {started:%d.%m.%Y %H:%M}")
 
     import sheets_service as ss
+
+    # 0a. Respektuj prepinac automatiky (list AUTOMATIKA v hlavni tabulce)
+    try:
+        ss.ensure_control_sheet()
+        enabled = ss.get_automation_enabled()
+    except Exception as e:
+        logging.error(f"Nelze přečíst stav automatiky: {e}")
+        print(json.dumps({"ok": False, "error": str(e)}, ensure_ascii=False))
+        sys.exit(1)
+    if not enabled and not args.force:
+        logging.info("Automatika je VYPNUTA (list AUTOMATIKA, buňka B2) - končím bez práce.")
+        try:
+            ss.append_run_log("automatický" if not args.dry_run else "náhled", args.model,
+                              0, 0, 0, 0, "Přeskočeno - automatika vypnuta")
+        except Exception:
+            pass
+        print(json.dumps({"ok": True, "skipped": True,
+                          "reason": "automatika vypnuta"}, ensure_ascii=False))
+        sys.exit(0)
+
+    # 0b. Cerstvy XML feed produktu (aby nove produkty byly v databazi)
+    if not args.no_feed_update:
+        try:
+            import feed_parser
+            db = feed_parser.build_and_cache_products(force_update=True)
+            logging.info(f"XML feed aktualizován: {len(db)} produktů.")
+        except Exception as e:
+            logging.warning(f"Aktualizace XML feedu selhala ({str(e)[:120]}) - "
+                            f"pokračuji se stávající cache.")
+
     try:
         sheets = args.sheet or ss.list_current_sheets(include_basic=not args.no_basic)
     except Exception as e:
@@ -213,6 +245,16 @@ def main():
     if total["errors"]:
         for e in total["errors"][:10]:
             logging.info(f"  ! {e}")
+
+    # zapis vysledku do historie na ridicim listu
+    try:
+        mode = "náhled (dry-run)" if args.dry_run else ("ruční" if args.sheet else "automatický")
+        note = "; ".join(total["errors"][:3]) if total["errors"] else "OK"
+        ss.append_run_log(mode, args.model, total["sheets"],
+                          total["generated"], total["cells_written"],
+                          total["failed"], note)
+    except Exception as e:
+        logging.warning(f"Zápis do historie běhů selhal: {e}")
 
     print(json.dumps({"ok": total["failed"] == 0, "dry_run": args.dry_run,
                       "duration_s": round(dur), "total": total,

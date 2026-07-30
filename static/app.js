@@ -138,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
             generator: 'Generátor textů',
             catalog: 'Knihovna modelů Triola',
             sheets: 'Google Sheets — hlavní tabulka Triola',
+            automation: 'Automatika — denní doplňování textů',
             batch: 'Hromadné generování z Excelu',
             seo: 'Prediktivně kalibrované SEO snippety',
             brandbook: 'Triola Brand Book & Stylistika',
@@ -1931,4 +1932,77 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     checkStatus();
+})();
+
+
+// ==================== AUTOMATIKA ====================
+(function initAutomation() {
+    const toggle = document.getElementById('auto-enabled-toggle');
+    const label = document.getElementById('auto-enabled-label');
+    const note = document.getElementById('auto-toggle-note');
+    const statusText = document.getElementById('auto-status-text');
+    const logBody = document.getElementById('auto-log-body');
+    const refreshBtn = document.getElementById('auto-refresh-btn');
+    if (!toggle) return;
+    let busy = false;
+
+    function renderState(enabled) {
+        toggle.checked = enabled;
+        label.textContent = enabled ? 'ZAPNUTO' : 'VYPNUTO';
+        label.style.color = enabled ? '#22c55e' : '#ef4444';
+        note.textContent = enabled
+            ? 'Robot poběží zítra v 6:00 a doplní chybějící texty.'
+            : 'Robot ráno nic neudělá, dokud automatiku znovu nezapnete.';
+    }
+
+    async function loadStatus() {
+        try {
+            const r = await fetch('/api/automation/status');
+            const d = await r.json();
+            if (!d.success) { statusText.textContent = 'Chyba: ' + d.error; return; }
+            renderState(d.enabled);
+            statusText.textContent = d.runs.length
+                ? `Posledních ${d.runs.length} běhů (nejnovější nahoře). Plán: ${d.schedule}.`
+                : `Zatím žádné záznamy. Plán: ${d.schedule}.`;
+            logBody.innerHTML = d.runs.map(run => `
+                <tr>
+                    <td>${run.when}</td><td>${run.mode}</td><td>${run.model}</td>
+                    <td>${run.sheets}</td><td>${run.generated}</td><td>${run.cells}</td>
+                    <td>${run.failed && run.failed != '0' ? `<span style="color:#ef4444;font-weight:700;">${run.failed}</span>` : '0'}</td>
+                    <td style="font-size:12px; color:var(--text-muted);">${run.note || ''}</td>
+                </tr>`).join('');
+        } catch (e) {
+            statusText.textContent = 'Chyba spojení: ' + e.message;
+        }
+    }
+
+    toggle.addEventListener('change', async () => {
+        if (busy) return;
+        busy = true;
+        const enabled = toggle.checked;
+        if (!enabled && !confirm('Opravdu VYPNOUT automatické doplňování textů?\n\nRanní robot pak nebude nic generovat, dokud automatiku znovu nezapnete.')) {
+            toggle.checked = true;
+            busy = false;
+            return;
+        }
+        label.textContent = 'Ukládám…';
+        try {
+            const r = await fetch('/api/automation/toggle', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled })
+            });
+            const d = await r.json();
+            if (d.success) renderState(d.enabled);
+            else { alert('Uložení selhalo: ' + d.error); toggle.checked = !enabled; renderState(!enabled); }
+        } catch (e) {
+            alert('Chyba spojení: ' + e.message);
+            toggle.checked = !enabled;
+            renderState(!enabled);
+        } finally {
+            busy = false;
+        }
+    });
+
+    refreshBtn.addEventListener('click', loadStatus);
+    loadStatus();
 })();
