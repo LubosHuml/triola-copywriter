@@ -57,7 +57,10 @@ def load_docx_cuts():
 
 def detect_cut_properties(code, title, description):
     """Detects Triola cut properties based on model code or descriptions and merges docx knowledge base."""
+    import re as _re
     code_str = str(code) if code else ""
+    # Kody z tabulek mivaji pismenny prefix (F28859, US22859) - pro detekci strihu bereme cislice
+    code_str = _re.sub(r"^\D+", "", code_str)
     title_lower = title.lower()
     desc_lower = description.lower()
     
@@ -75,8 +78,8 @@ def detect_cut_properties(code, title, description):
             characteristics = "Nevyztužená podprsenka s kosticemi navržená pro optimální zpevnění a formování. Otázka pro zákaznici: „Chtěla byste podprsenku, která prsa krásně podrží, ale zároveň je zpevní a formuje?“"
             benefits = [
                 "Nevyztužená s kosticemi.",
-                "Formující efekt – opticky zmenší objem prsou až o jednu velikost, ale zanechá přirozený tvar.",
-                "Flexi kostice – při pohybu pracují s tělem, nezapichují se do podpaží.",
+                "Formující efekt – prsa zpevní a zformuje do přirozeného tvaru.",
+                "Flexi kostice – přizpůsobí se pohybu těla, nezapichují se do podpaží.",
                 "Komfortní rozšířená ramínka – odlehčují ramenům, poskytují pohodlí po celý den.",
                 "Ideální pro ženy, které chtějí tvarovat poprsí, ale zachovat jemnost a ženskost.",
                 "Romantická krajka přidává eleganci, aniž by ubírala na funkčnosti.",
@@ -85,10 +88,10 @@ def detect_cut_properties(code, title, description):
             recommendation = "Ukažte zákaznici, že tahle podprsenka kombinuje funkčnost s elegancí. Krajka zvýrazní ženskost, ale střih zajistí pevnost i lehkost při nošení."
         else:
             cut_name = "Perfect-Fit"
-            characteristics = "Hladká, tence vyztužená podprsenka s kosticemi navržená pro maximální oporu a formování postavy. Otázka pro zákaznici: „Máte pocit, že vaše podprsenka spíš prsa přidává, než formuje? Tahle naopak opticky zmenší a přitom podrží.“"
+            characteristics = "Hladká, tence vyztužená podprsenka s kosticemi navržená pro maximální oporu a formování postavy. Otázka pro zákaznici: „Chtěla byste podprsenku, která prsa krásně zformuje, podrží a je pod oblečením neviditelná?“"
             benefits = [
                 "Bezešvé vyztužené košíčky s povrchem Ultrafein (ultra jemný, hladký obyčejný povrch) – dokonale se přizpůsobí tvaru prsou a vytvářejí přirozeně kulatý tvar.",
-                "Formující efekt – opticky zmenší poprsí až o jednu velikost, zachová přitom krásné křivky.",
+                "Formující efekt – zafixuje prsa v ideální výšce a zachová krásné křivky.",
                 "Flexi kostice – pružně se přizpůsobí pohybu těla, nikde netlačí ani neškrtí.",
                 "Široká ramínka – poskytují pohodlí a ulevují ramenům i u větších velikostí.",
                 "Pevný obvod z funkčního materiálu – unese váhu poprsí a udrží jej v požadované výšce po celý den.",

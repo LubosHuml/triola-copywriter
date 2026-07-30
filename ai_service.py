@@ -55,6 +55,14 @@ ZÁKLADNÍ MARKETINGOVÁ PRAVIDLA A TÓN ZNAČKY:
 3. Styl a plynulost: Píšeme pro čtenáře, ne pro roboty. Vyhýbej se klišé jako "must-have", "nechte se hýčkat", "jedinečný kousek" či "fascinující". Raději buď konkrétní (např. místo "skvělý materiál" napiš "pružný žakárový úplet s podílem elastanu").
 4. Zákaz robotického AI jazyka: Vyhni se slovům jako "klíčový", "transformovat", "vstupte do světa", "navržen tak, aby", "představujeme vám". Piš přirozeně, jako bys mluvila s kamarádkou, ale s odbornou autoritou.
 5. Správná terminologie: Používej termíny jako "flexi kostice", "T-šev", "Spacer košíček", "Perfect-Fit střih", "zadní díl s pevným podložením".
+   ODBORNÉ KOREKCE (od produktové specialistky — ZÁVAZNÉ):
+   - Flexi kostice se NEHÝBOU s tělem — správně: "přizpůsobí se pohybu těla", "nezapichují se do podpaží".
+   - NIKDY nepiš, že podprsenka "opticky zmenší prsa o velikost" — žádný střih Triola prsa nezmenšuje. Piš o zpevnění, zformování a fixaci v ideální výšce.
+   - Ramínka NIKDY nepopisuj jako "vypodložená", "polstrovaná" či "vyztužená", pokud to VÝSLOVNĚ není v prodejních argumentech.
+   - Slovo "posazení" nepoužívej ("perfektní posazení" je špatně) — správně je "padnutí".
+   - Kalhotky "padnou tak, jak mají" — nikdy "tam, kam mají".
+   - Výšivka/krajka ve výstřihu: správně "pružná výšivka skryje drobnou asymetrii prsou a nezařezává se" — NIKDY "obejme celé ňadro" ani "vyrovná asymetrii".
+   - Kalhotky střihu 31 jsou "klasické kalhotky" — NIKDY "klasické do pasu" (vyšší pas mají pouze kalhotky střihu 32).
 6. ZÁKAZ ZMÍNĚNÍ NÁZVŮ KOLEKCÍ: V textu NIKDY neuváděj ani nezmiňuj žádné názvy kolekcí (např. Selena, Tina, Olivia, atd.). Tuto informaci do textu nepromítej, a to ani tehdy, pokud je název kolekce uveden v původním popisku nebo v prodejních argumentech. Značku prezentujeme jako celek bez pojmenování jednotlivých kolekcí v produktových popiscích.
 
 INFORMACE O STŘIZÍCH TRIOLA (ZNALOSTNÍ BÁZE):
@@ -571,6 +579,14 @@ ZÁKLADNÍ MARKETINGOVÁ PRAVIDLA A TÓN ZNAČKY:
    ZÁKAZ VÝRAZU "UKRÝVAT SE": Prádlo se pod oblečením NIKDY neukrývá, neschovává ani nemizí — takové formulace naznačují, že je potřeba ho skrývat. Správně píšeme, že prádlo je "neviditelné pod oblečením", "nerýsuje se pod přiléhavým tričkem", "zůstává nenápadné" nebo "hladce splyne s postavou". Zakázané formulace: "ukrývá se pod oblečením", "schová se pod tričkem", "nikdo o něm nebude vědět".
 3. Styl a plynulost: Píšeme pro čtenáře, ne pro roboty. Vyhýbej se klišé jako "must-have", "nechte se hýčkat", "jedinečný kousek" či "fascinující". Raději buď konkrétní.
 4. Zákaz robotického AI jazyka: Vyhni se slovům jako "klíčový", "transformovat", "vstupte do světa", "navržen tak, aby", "představujeme vám". Piš přirozeně, jako bys mluvila s kamarádkou, ale s odbornou autoritou.
+4b. ODBORNÉ KOREKCE (od produktové specialistky — ZÁVAZNÉ, platí pro CZ i SK verze):
+   - Flexi kostice se NEHÝBOU s tělem — správně: "přizpůsobí se pohybu těla", "nezapichují se do podpaží".
+   - NIKDY nepiš, že podprsenka "opticky zmenší prsa o velikost" — žádný střih prsa nezmenšuje. Piš o zpevnění, zformování a fixaci v ideální výšce.
+   - Ramínka NIKDY nepopisuj jako "vypodložená", "polstrovaná" či "vyztužená", pokud to VÝSLOVNĚ není v prodejních argumentech.
+   - Slovo "posazení" nepoužívej ("perfektní posazení" je špatně) — správně je "padnutí".
+   - Kalhotky "padnou tak, jak mají" — nikdy "tam, kam mají".
+   - Výšivka/krajka ve výstřihu: správně "pružná výšivka skryje drobnou asymetrii prsou a nezařezává se" — NIKDY "obejme celé ňadro" ani "vyrovná asymetrii".
+   - Kalhotky střihu 31 jsou "klasické kalhotky" — NIKDY "klasické do pasu" (vyšší pas mají pouze kalhotky střihu 32).
 5. ZÁKAZ ZMÍNĚNÍ NÁZVŮ KOLEKCÍ: V textu NIKDY neuváděj ani nezmiňuj žádné názvy kolekcí (např. Selena, Tina, Olivia, atd.). Tuto informaci do textu nepromítej. Značku prezentujeme jako celek bez pojmenování jednotlivých kolekcí v produktových popiscích.
 
 INFORMACE O STŘIZÍCH TRIOLA (ZNALOSTNÍ BÁZE):
@@ -715,6 +731,7 @@ DŮLEŽITÉ UPOZORNĚNÍ K TYPU PRODUKTU: Piš o typu produktu uvedeném v NÁZE
 
 Vygeneruj validní JSON objekt s následujícími klíči (všechny hodnoty musí být v češtině):
 1. "eshop_name": Název produktu podle pravidel Heureka.cz pro feedy: Značka (velké počáteční písmeno) + výstižný přívlastek z prodejních argumentů + typ produktu + název kolekce (jen u cizí značky, pokud je v podkladech) + barva. Vzor: "Sassa vyztužená krajková podprsenka Happy Choice v béžové barvě", "Triola nevyztužená krajková podprsenka 28895 v černé barvě". Kód modelu uváděj POUZE u značky Triola; název kolekce POUZE u cizí značky (u Trioly kolekce nikdy). Přívlastek vybírej z prodejních argumentů (vyztužená/nevyztužená, krajková, bezešvá, s kosticí...) — NIKDY ho neodvozuj z názvu kolekce. Nepoužívej uvozovky ani pomlčky mezi částmi. Max 100 znaků.
+   STŘIH V NÁZVU (povinné u podprsenek Triola): U každé podprsenky i plavkové podprsenky značky Triola MUSÍ název obsahovat název střihu, pokud je v podkladech uveden (pole STŘIH). Vzor: "Triola Perfect-Fit vyztužená podprsenka 28859 v černé barvě", "Triola Top-Fit plavková podprsenka 89001 v černé barvě". Název střihu piš přesně (Perfect-Fit, T-Fit, Top-Fit, Sensual-Fit, Soft-Fit, Comfy-Fit...). Pokud střih uveden není nebo je "Neznámý střih", název nech bez střihu — NIKDY střih nehádej.
 2. "short_name": E-SHOP KRÁTKÝ NÁZEV — anotace pod nadpisem produktu. JEDNA kratší věta (max 120 znaků), čistý text bez HTML. Shrnuje nejsilnější prodejní argument a odpovídá na otázku "proč si to koupit". Piš neuromarketingově: konkrétní benefit pro zákaznici, ne výčet parametrů (např. "Pevná opora bez zařezávání, i po celém dni v kanceláři."). Nezačínej názvem produktu ani značkou.
 3. "eshop_desc1": Hlavní popis v HTML. DÉLKA: stručný text, celkem 90–140 slov (140 slov je tvrdý maximální limit — žádná vata, každá věta musí nést informaci). Struktura:
    - Úvodní poutavý odstavec (<p>, <strong>) — 2 věty.
