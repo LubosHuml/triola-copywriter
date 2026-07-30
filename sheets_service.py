@@ -588,6 +588,9 @@ if __name__ == "__main__":
     if cmd == "check":
         r = check_access()
         print(json.dumps(r, ensure_ascii=False, indent=2))
+        if not r["ok"]:
+            print("\nKONTROLA SELHALA - oprav pripojeni (viz 'error' vyse).", file=sys.stderr)
+            sys.exit(1)
     elif cmd == "sheets":
         print(json.dumps(list_sheets(), ensure_ascii=False, indent=2))
     elif cmd == "read":
