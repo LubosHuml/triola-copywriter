@@ -154,7 +154,7 @@ def main():
     ap.add_argument("--limit", type=int, default=80, help="max řádků celkem za běh (default 80)")
     ap.add_argument("--per-sheet", type=int, default=40, help="max řádků na jeden list (default 40)")
     ap.add_argument("--sheet", action="append", help="zpracovat jen tento list (lze zadat víckrát)")
-    ap.add_argument("--model", default="claude-sonnet-5", help="AI model")
+    ap.add_argument("--model", default="claude-opus-5", help="AI model")
     ap.add_argument("--tone", default="empaticky", help="tón textů")
     ap.add_argument("--no-basic", action="store_true", help="vynechat trvalé kolekce (bez roku)")
     args = ap.parse_args()

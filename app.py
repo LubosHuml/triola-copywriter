@@ -191,7 +191,7 @@ def generate():
     data = request.json or {}
     product_code = data.get('product_code', '')
     format_type = data.get('format_type', 'popisek')
-    model_key = data.get('model_key', 'claude-sonnet-5')
+    model_key = data.get('model_key', 'claude-opus-5')
     tone_key = data.get('tone_key', 'empaticky')
     length_key = data.get('length_key', 'stredni')
     keywords = data.get('keywords', '')
@@ -340,7 +340,7 @@ def batch_process_row():
     row_brand = data.get('brand', '').strip()
     material = data.get('material', '').strip()
     size = data.get('size', '').strip()
-    model_key = data.get('model_key', 'claude-sonnet-5')
+    model_key = data.get('model_key', 'claude-opus-5')
     tone_key = data.get('tone_key', 'empaticky')
     use_simulation = data.get('use_simulation', False)
     
@@ -395,7 +395,7 @@ def batch_download(filename):
 def seo_generate_single():
     """Generates an SEO snippet for a single page manually."""
     data = request.json or {}
-    model_key = data.get('model_key', 'claude-sonnet-5')
+    model_key = data.get('model_key', 'claude-opus-5')
     try:
         result = generate_seo_snippet(data, model_key)
         return jsonify({
@@ -576,7 +576,7 @@ def seo_process_row():
     data = request.json or {}
     filename = data.get('filename', '')
     row_num = data.get('row_num')
-    model_key = data.get('model_key', 'claude-sonnet-5')
+    model_key = data.get('model_key', 'claude-opus-5')
     
     if not filename or row_num is None:
         return jsonify({"success": False, "error": "Chybí povinné parametry (filename nebo row_num)."}), 400
@@ -675,7 +675,7 @@ def sheets_process_row():
     row_brand = data.get('brand', '').strip()
     material = data.get('material', '').strip()
     size = data.get('size', '').strip()
-    model_key = data.get('model_key', 'claude-sonnet-5')
+    model_key = data.get('model_key', 'claude-opus-5')
     tone_key = data.get('tone_key', 'empaticky')
 
     try:
