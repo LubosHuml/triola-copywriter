@@ -31,3 +31,5 @@ scratch_*
 # Google service account (NIKDY do gitu!)
 google_service_account.json
 *service_account*.json
+high-comfort-*.json
+*-????????????.json

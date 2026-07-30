@@ -110,6 +110,64 @@ def _is_sk_header(h):
     return hl.endswith(" sk") or hl.endswith("_sk") or hl.endswith("-sk")
 
 
+# ---------------------------------------------------------------- znacka z nazvu listu
+
+# Listy, ktere nejsou produktove nebo obsahuji mix znacek -> znacku neurcujeme
+NON_BRAND_SHEETS = {"ostatní značky", "seznam kw dle zboží", "kakw", "dr.nap"}
+
+# Tokeny sezon/kolekci, ktere se z nazvu listu odstranuji
+_SEASON_TOKENS = {
+    "aw", "ss", "jl", "pz", "swim", "basic", "basic+", "plavky", "xmas",
+    "lingerie", "stálá", "stala", "kolekce", "collection",
+}
+
+
+def brand_from_sheet_name(sheet_name):
+    """
+    Odvodi nazev znacky z nazvu listu: 'SASSA basic+AW26' -> 'Sassa',
+    'BABELL AW26' -> 'Babell', 'Triola JL 26' -> 'Triola', 'LadyBelty AW2025' -> 'LadyBelty'.
+    Vraci "" pokud znacku nelze urcit (mix znacek, pomocne listy).
+    """
+    import re as _re
+    name = str(sheet_name or "").strip()
+    if name.lower() in NON_BRAND_SHEETS:
+        return ""
+    # rozdel na slova, zahod sezonni tokeny, roky a cisla
+    words = [w for w in _re.split(r"[\s+/,]+", name) if w]
+    keep = []
+    for w in words:
+        base = _re.sub(r"[0-9]+$", "", w)           # 'AW26' -> 'AW'
+        if not base:
+            continue                                # ciste cislo (rok)
+        if base.lower() in _SEASON_TOKENS:
+            continue
+        if _re.fullmatch(r"(?i)(aw|ss)\d*", w):
+            continue
+        keep.append(w)
+        if len(keep) >= 2:                          # znacka je max 2 slova
+            break
+    if not keep:
+        return ""
+
+    def _norm(w):
+        # SASSA -> Sassa, COTONELLA -> Cotonella; LadyBelty a Dorina zustavaji
+        return w.capitalize() if w.isupper() else w
+
+    return " ".join(_norm(w) for w in keep)
+
+
+# Zaloha: odvozeni znacky z prefixu kodu produktu (kdyz nazev listu nepomuze)
+CODE_PREFIX_BRANDS = (("SAS", "Sassa"),)
+
+
+def brand_from_code(model_code):
+    up = str(model_code or "").upper()
+    for prefix, brand in CODE_PREFIX_BRANDS:
+        if up.startswith(prefix):
+            return brand
+    return ""
+
+
 # ---------------------------------------------------------------- cteni
 
 def list_sheets(spreadsheet_id=DEFAULT_SPREADSHEET_ID):
@@ -157,6 +215,8 @@ def read_sheet(sheet_name, spreadsheet_id=DEFAULT_SPREADSHEET_ID, max_rows=2000)
         v = row[idx]
         return str(v).strip() if v is not None else ""
 
+    sheet_brand = brand_from_sheet_name(sheet_name)
+
     rows = []
     for r_i in range(header_row, len(values)):
         row = values[r_i]
@@ -170,6 +230,11 @@ def read_sheet(sheet_name, spreadsheet_id=DEFAULT_SPREADSHEET_ID, max_rows=2000)
         if color_raw.endswith(".0"):
             color_raw = color_raw[:-2]
 
+        # znacka: sloupec > nazev listu > prefix kodu (jinak prazdne = Triola)
+        row_brand = (cell(row, mapping.get("brand", -1))
+                     or sheet_brand
+                     or brand_from_code(code))
+
         rows.append({
             "row_num": r_i + 1,                       # 1-based cislo radku v listu
             "model_code": code,
@@ -177,7 +242,7 @@ def read_sheet(sheet_name, spreadsheet_id=DEFAULT_SPREADSHEET_ID, max_rows=2000)
             "arguments": cell(row, mapping.get("arguments", -1)),
             "product_name": cell(row, mapping.get("product_name", -1)),
             "design_name": cell(row, mapping.get("design_name", -1)),
-            "brand": cell(row, mapping.get("brand", -1)),
+            "brand": row_brand,
             "material": cell(row, mapping.get("material", -1)),
             "size": cell(row, mapping.get("size", -1)),
             # nahled, zda uz radek ma vygenerovany nazev
