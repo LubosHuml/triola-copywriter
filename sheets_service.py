@@ -618,10 +618,16 @@ def ensure_color_sheet(seed=None, spreadsheet_id=DEFAULT_SPREADSHEET_ID):
 
 
 def get_color_code_map(spreadsheet_id=DEFAULT_SPREADSHEET_ID, force=False):
-    """Nacte mapovani kod->nazev barvy z listu BARVY (cache na dobu behu)."""
+    """
+    Mapovani kod -> nazev barvy.
+    Zaklad: kompletni ciselnik COLOR_CODE_TO_NAME (batch_service, dodal Lubos).
+    List BARVY v tabulce ma prednost - kolegyne v nem muzou nazvy upravit
+    nebo doplnit nove kody.
+    """
     if _color_map_cache["map"] is not None and not force:
         return _color_map_cache["map"]
-    result = {}
+    from batch_service import COLOR_CODE_TO_NAME
+    result = dict(COLOR_CODE_TO_NAME)
     try:
         svc = get_service()
         resp = api_call(svc.spreadsheets().values().get(
