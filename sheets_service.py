@@ -17,6 +17,7 @@ Autentizace: service account JSON.
 import os
 import json
 import logging
+import time
 
 from batch_service import detect_header_mapping
 
@@ -168,13 +169,191 @@ def brand_from_code(model_code):
     return ""
 
 
+# ---------------------------------------------------------------- retry pri rate limitu
+
+def api_call(request, what="Sheets API", max_tries=6):
+    """
+    Provede request.execute() s exponencialnim backoffem pri 429 (kvota) a 5xx.
+    Google Sheets API ma limit 60 cteni/min a 60 zapisu/min na uzivatele.
+    """
+    import random
+    delay = 2.0
+    last = None
+    for attempt in range(1, max_tries + 1):
+        try:
+            return request.execute()
+        except Exception as e:
+            last = e
+            code = getattr(getattr(e, "resp", None), "status", None)
+            msg = str(e)
+            transient = (code in (429, 500, 502, 503, 504)
+                         or "Quota exceeded" in msg or "rateLimitExceeded" in msg)
+            if not transient or attempt == max_tries:
+                raise
+            wait = delay + random.uniform(0, 1.5)
+            logging.warning(f"{what}: limit/chyba ({code}) - čekám {wait:.1f}s "
+                            f"(pokus {attempt}/{max_tries})")
+            time.sleep(wait)
+            delay = min(delay * 2, 60)
+    raise last
+
+
+def read_sheet_bundle(sheet_name, spreadsheet_id=DEFAULT_SPREADSHEET_ID, max_rows=2000):
+    """
+    JEDNO cteni listu -> vse potrebne pro automatiku.
+    Vraci {values, header_row, mapping, headers, rows, output_columns, missing_columns}.
+    Dulezite pro rate limit: nahrazuje read_sheet + resolve_output_columns + cteni hodnot.
+    """
+    svc = get_service()
+    req = svc.spreadsheets().values().get(
+        spreadsheetId=spreadsheet_id, range=f"{_quote(sheet_name)}!A1:ZZ{max_rows}",
+        valueRenderOption="UNFORMATTED_VALUE")
+    values = api_call(req, f"čtení listu '{sheet_name}'").get("values", [])
+    if not values:
+        return {"values": [], "header_row": 1, "mapping": {}, "headers": [],
+                "rows": [], "output_columns": {}, "missing_columns": []}
+
+    header_row, mapping = detect_header_mapping(values)
+    hdr = values[header_row - 1] if header_row - 1 < len(values) else []
+    n_cols = max((len(r) for r in values), default=0)
+    headers = [str(hdr[i]).strip() if i < len(hdr) and hdr[i] is not None else ""
+               for i in range(n_cols)]
+
+    def cell(row, idx):
+        if idx is None or idx < 0 or idx >= len(row):
+            return ""
+        v = row[idx]
+        return str(v).strip() if v is not None else ""
+
+    sheet_brand = brand_from_sheet_name(sheet_name)
+    rows = []
+    for r_i in range(header_row, len(values)):
+        row = values[r_i]
+        code = cell(row, mapping.get("code", -1))
+        if code.endswith(".0"):
+            code = code[:-2]
+        if not code:
+            continue
+        color_raw = cell(row, mapping.get("color", -1))
+        if color_raw.endswith(".0"):
+            color_raw = color_raw[:-2]
+        rows.append({
+            "row_num": r_i + 1,
+            "model_code": code,
+            "color_name": color_raw,
+            "arguments": cell(row, mapping.get("arguments", -1)),
+            "product_name": cell(row, mapping.get("product_name", -1)),
+            "design_name": cell(row, mapping.get("design_name", -1)),
+            "brand": (cell(row, mapping.get("brand", -1)) or sheet_brand
+                      or brand_from_code(code)),
+            "material": cell(row, mapping.get("material", -1)),
+            "size": cell(row, mapping.get("size", -1)),
+            "has_output": bool(cell(row, mapping.get("eshop_name", -1))),
+        })
+
+    # mapovani vystupnich sloupcu ze stejnych hlavicek (bez dalsiho cteni)
+    columns, used, missing = {}, set(), []
+    for key, names in WRITABLE_COLUMNS.items():
+        want_sk = key.endswith("_sk")
+        found = -1
+        for i, h in enumerate(headers):
+            if i in used or not h or _is_sk_header(h) != want_sk:
+                continue
+            if any(n.lower().strip() == h.lower().strip() for n in names):
+                found = i
+                break
+        if found == -1:
+            for i, h in enumerate(headers):
+                if i in used or not h or _is_sk_header(h) != want_sk:
+                    continue
+                hl = h.lower().strip()
+                if any(n.lower().strip() in hl or hl in n.lower().strip() for n in names):
+                    found = i
+                    break
+        if found != -1:
+            used.add(found)
+        else:
+            missing.append(key)
+        columns[key] = found
+
+    return {"values": values, "header_row": header_row, "mapping": mapping,
+            "headers": headers, "rows": rows, "output_columns": columns,
+            "missing_columns": missing}
+
+
+def create_missing_columns(sheet_name, headers, columns, missing, header_row,
+                           spreadsheet_id=DEFAULT_SPREADSHEET_ID):
+    """Zaklada chybejici vystupni sloupce na KONEC hlavicky. Vraci (columns, created)."""
+    if not missing:
+        return columns, []
+    svc = get_service()
+    next_col = len(headers)
+    created, cells = [], []
+    for key in missing:
+        names = WRITABLE_COLUMNS[key]
+        columns[key] = next_col
+        created.append(names[0])
+        cells.append({"range": f"{_quote(sheet_name)}!{col_letter(next_col)}{header_row}",
+                      "values": [[names[0]]]})
+        next_col += 1
+    req = svc.spreadsheets().values().batchUpdate(
+        spreadsheetId=spreadsheet_id,
+        body={"valueInputOption": "RAW", "data": cells})
+    api_call(req, f"přidání sloupců v '{sheet_name}'")
+    logging.info(f"Přidány nové sloupce do listu '{sheet_name}': {created}")
+    return columns, created
+
+
+# ---------------------------------------------------------------- aktualni listy (pro automatiku)
+
+def current_year_tokens(now=None):
+    """Dvojciselne tokeny aktualniho a nasledujiciho roku: 2026 -> ('26', '27')."""
+    import datetime
+    now = now or datetime.date.today()
+    y = now.year
+    return (str(y)[2:], str(y + 1)[2:])
+
+
+def is_current_sheet(sheet_name, tokens=None, include_basic=True):
+    """
+    Je list aktualni? Ano, pokud nazev obsahuje rok aktualni nebo nasledujici sezony
+    (napr. 'Triola PZ 26', 'Dorina SS2026', 'SASSA basic+AW26').
+    Pokud include_basic, berou se i trvale kolekce bez roku ('SLOGGI Basic',
+    'Triola stálá kolekce') - ty se doplnuji prubezne.
+    """
+    import re as _re
+    name = str(sheet_name or "").strip()
+    if not name or name.lower() in NON_BRAND_SHEETS:
+        return False
+    tokens = tokens or current_year_tokens()
+    for t in tokens:
+        if _re.search(r"(?<!\d)(?:20)?" + _re.escape(t) + r"(?!\d)", name):
+            return True
+    if include_basic:
+        low = name.lower()
+        if _re.search(r"(?<!\d)(?:20)?\d{2}(?!\d)", name):
+            return False          # ma rok, ale jiny -> stara sezona
+        if "basic" in low or "stálá" in low or "stala" in low or "kolekce" in low:
+            return True
+    return False
+
+
+def list_current_sheets(spreadsheet_id=DEFAULT_SPREADSHEET_ID, include_basic=True):
+    """Vraci nazvy listu, ktere jsou aktualni pro dnesni datum."""
+    info = list_sheets(spreadsheet_id)
+    toks = current_year_tokens()
+    return [s["title"] for s in info["sheets"]
+            if is_current_sheet(s["title"], toks, include_basic)]
+
+
 # ---------------------------------------------------------------- cteni
 
 def list_sheets(spreadsheet_id=DEFAULT_SPREADSHEET_ID):
     """Vraci [{title, sheetId, rows, cols}] pro vsechny listy tabulky."""
     svc = get_service()
-    meta = svc.spreadsheets().get(spreadsheetId=spreadsheet_id, fields=
-                                  "properties.title,sheets.properties").execute()
+    meta = api_call(svc.spreadsheets().get(
+        spreadsheetId=spreadsheet_id,
+        fields="properties.title,sheets.properties"), "seznam listů")
     out = []
     for sh in meta.get("sheets", []):
         p = sh["properties"]
@@ -321,7 +500,8 @@ def _assert_writable(key):
 
 
 def write_row_results(sheet_name, row_num, results, columns,
-                      spreadsheet_id=DEFAULT_SPREADSHEET_ID):
+                      spreadsheet_id=DEFAULT_SPREADSHEET_ID, only_fill_empty=False,
+                      existing_row=None):
     """
     Zapise vysledky generovani do jednoho radku.
     Zapisuje POUZE bunky ve sloupcich z 'columns' (= WRITABLE_COLUMNS).
@@ -329,7 +509,20 @@ def write_row_results(sheet_name, row_num, results, columns,
     Vraci seznam zapsanych bunek (pro audit).
     """
     svc = get_service()
-    data, written = [], []
+
+    # rezim doplnovani: precti aktualni stav radku a hotove texty nechej byt
+    if only_fill_empty and existing_row is None:
+        rng = f"{_quote(sheet_name)}!A{row_num}:ZZ{row_num}"
+        got = svc.spreadsheets().values().get(
+            spreadsheetId=spreadsheet_id, range=rng).execute().get("values", [[]])
+        existing_row = got[0] if got else []
+
+    def _has_text(col_idx):
+        if not existing_row or col_idx < 0 or col_idx >= len(existing_row):
+            return False
+        return str(existing_row[col_idx]).strip() != ""
+
+    data, written, skipped = [], [], []
     for key, val in results.items():
         if key not in WRITABLE_COLUMNS:
             continue                       # cizi klic ignorujeme
@@ -337,16 +530,22 @@ def write_row_results(sheet_name, row_num, results, columns,
         col = columns.get(key, -1)
         if col == -1 or val is None or str(val).strip() == "":
             continue
+        if only_fill_empty and _has_text(col):
+            skipped.append(key)            # uz tam text je - nepresahujeme
+            continue
         a1 = f"{col_letter(col)}{row_num}"
         data.append({"range": f"{_quote(sheet_name)}!{a1}", "values": [[str(val)]]})
         written.append({"key": key, "cell": a1})
 
+    if skipped:
+        logging.info(f"Řádek {row_num}: {len(skipped)} polí přeskočeno (už mají text): "
+                     f"{', '.join(skipped)}")
     if not data:
         return []
 
-    svc.spreadsheets().values().batchUpdate(
+    api_call(svc.spreadsheets().values().batchUpdate(
         spreadsheetId=spreadsheet_id,
-        body={"valueInputOption": "RAW", "data": data}).execute()
+        body={"valueInputOption": "RAW", "data": data}), f"zápis do '{sheet_name}'")
     logging.info(f"Zapsáno {len(written)} buněk do '{sheet_name}' řádek {row_num}: "
                  f"{', '.join(w['cell'] for w in written)}")
     return written

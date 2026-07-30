@@ -1,0 +1,78 @@
+name: Automatické doplnění copywritingu
+
+on:
+  schedule:
+    # 04:00 UTC = 6:00 ráno letního času (CEST). V zimě (CET) běží v 5:00 ráno.
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Jen náhled (nic nezapisovat)'
+        type: boolean
+        default: false
+      limit:
+        description: 'Max řádků za běh'
+        default: '60'
+      model:
+        description: 'AI model'
+        type: choice
+        default: 'claude-sonnet-5'
+        options: ['claude-sonnet-5', 'claude-sonnet-4-6', 'claude-opus-4-8']
+      sheet:
+        description: 'Jen konkrétní list (nepovinné)'
+        default: ''
+
+# Zabrání dvěma běhům současně - jinak by si mohly přepisovat buňky
+concurrency:
+  group: auto-copywriting
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Stáhnout kód
+        uses: actions/checkout@v4
+
+      - name: Nastavit Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Nainstalovat závislosti
+        run: pip install -r requirements.txt
+
+      - name: Vytvořit přihlašovací soubor Google
+        run: echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}' > google_service_account.json
+
+      - name: Ověřit připojení k tabulce
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python sheets_service.py check
+
+      - name: Doplnit chybějící texty
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: |
+          ARGS="--limit ${{ inputs.limit || '60' }} --model ${{ inputs.model || 'claude-sonnet-5' }}"
+          if [ "${{ inputs.dry_run }}" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          if [ -n "${{ inputs.sheet }}" ]; then ARGS="$ARGS --sheet '${{ inputs.sheet }}'"; fi
+          echo "Spouštím: python auto_generate.py $ARGS"
+          eval "python auto_generate.py $ARGS"
+
+      - name: Uložit log jako artefakt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: log-${{ github.run_number }}
+          path: auto_generate.log
+          retention-days: 30
+
+      - name: Smazat přihlašovací soubor
+        if: always()
+        run: rm -f google_service_account.json
