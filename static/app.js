@@ -1901,7 +1901,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const cell = document.getElementById('sheets-status-' + row.row_num);
             if (cell) cell.innerHTML = '<span style="color:#3b82f6;">generuji…</span>';
             progressText.textContent = `Zpracovávám ${i + 1} z ${todo.length}… (hotovo: ${ok}, chyby: ${fail})`;
-            try {
+            const processOnce = async () => {
                 const r = await fetch('/api/sheets/process-row', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1912,7 +1912,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         model_key: modelKey, tone_key: toneKey
                     })
                 });
-                const d = await r.json();
+                return await r.json();
+            };
+            try {
+                let d;
+                try {
+                    d = await processOnce();
+                } catch (e1) {
+                    d = { success: false, error: e1.message };
+                }
+                if (!d.success) {
+                    // druhy pokus po 15s - typicky pomuze pri docasnem pretizeni/restart serveru
+                    if (cell) cell.innerHTML = '<span style="color:#f59e0b;">opakuji za 15 s…</span>';
+                    await new Promise(res => setTimeout(res, 15000));
+                    try {
+                        d = await processOnce();
+                    } catch (e2) {
+                        d = { success: false, error: e2.message };
+                    }
+                }
                 if (d.success) {
                     ok++;
                     const cells = (d.written_cells || []).map(c => c.cell).join(', ');
