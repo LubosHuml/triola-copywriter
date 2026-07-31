@@ -55,6 +55,94 @@ def load_docx_cuts():
             pass
     return None
 
+# ---------------------------------------------------------------- typ produktu
+
+# Prefixy kodu fazon Triola pro PLAVKY (overeno na listech Plavky 2026/2027)
+SWIM_CODE_TYPES = {
+    "82": "plavková podprsenka", "84": "plavková podprsenka",
+    "85": "plavková podprsenka", "88": "plavková podprsenka",
+    "89": "plavková podprsenka",
+    "91": "plavkové kalhotky", "92": "plavkové kalhotky do pasu",
+    "94": "plavkové brazilky", "96": "bokové plavkové kalhotky",
+}
+
+# Plazove obleceni - NENI plavky ani pradlo, zadna terminologie kosicku/kalhotek
+BEACHWEAR_WORDS = ("kaftan", "pareo", "plážov", "plazov", "tunik", "šaty", "saty",
+                   "sukně", "sukne", "poncho", "kimono", "overal")
+
+
+def detect_product_type(code, arguments="", product_name="", category=""):
+    """
+    Urci typ produktu z podkladu. Vraci (typ, kategorie), kde kategorie je
+    'plavky' | 'plazove' | 'pradlo'.
+    Poradi zdroju: sloupec PRODUKT > prodejni argumenty > prefix kodu.
+    """
+    import re as _re
+    args = (arguments or "").lower()
+    pname = (product_name or "").strip().lower()
+    swim = str(category or "").lower() == "plavky"
+    digits = _re.sub(r"^\D+", "", str(code or ""))
+    prefix = digits[:2]
+
+    # 1) Plazove obleceni pozname vzdy - i uprostred listu s plavkami
+    src = f"{pname} {args}"
+    if any(w in src for w in BEACHWEAR_WORDS):
+        for w in ("kaftan", "pareo", "tunika", "poncho", "kimono", "overal"):
+            if w in src:
+                return w.capitalize(), "plazove"
+        if "šaty" in src or "saty" in src:
+            return "Plážové šaty", "plazove"
+        if "sukně" in src or "sukne" in src:
+            return "Plážová sukně", "plazove"
+        return "Plážový doplněk", "plazove"
+
+    # 2) Explicitni sloupec PRODUKT ma prednost
+    if pname:
+        base = pname
+    else:
+        # 3) Odvozeni z prodejnich argumentu
+        if "jednodíl" in args or "monokin" in args:
+            base = "jednodílné plavky"
+        elif "tankin" in args:
+            base = "tankiny"
+        elif "brazil" in args:
+            base = "brazilky"
+        elif "tanga" in args or "string" in args:
+            base = "tanga"
+        elif "panty" in args or "boxerk" in args:
+            base = "panty"
+        elif "bokové kalhotky" in args or "bokovky" in args:
+            base = "bokové kalhotky"
+        elif "do pasu" in args or "vysoké kalhotky" in args or "vyšší kalhotky" in args:
+            base = "kalhotky do pasu"
+        elif "kalhotk" in args or "nohavič" in args:
+            base = "kalhotky"
+        elif "podprsenk" in args or "košíč" in args or "koše" in args or "bralet" in args:
+            base = "podprsenka"
+        elif swim and prefix in SWIM_CODE_TYPES:
+            # 4) Prefix kodu (jen u plavek - u pradla to resi detect_cut_properties)
+            return SWIM_CODE_TYPES[prefix], "plavky"
+        else:
+            base = ""
+
+    if not base:
+        return "", ("plavky" if swim else "pradlo")
+
+    if swim:
+        # doplnit "plavkov*" pokud tam jeste neni
+        if "plavk" not in base:
+            if "podprsenk" in base:
+                base = base.replace("podprsenka", "plavková podprsenka")
+            elif base.startswith("kalhotky"):
+                base = "plavkové " + base
+            elif "kalhotk" in base:
+                base = base.replace("kalhotky", "plavkové kalhotky")
+            elif base in ("brazilky", "tanga", "panty", "bokové kalhotky"):
+                base = "plavkové " + base
+        return base, "plavky"
+    return base, "pradlo"
+
+
 def detect_cut_properties(code, title, description):
     """Detects Triola cut properties based on model code or descriptions and merges docx knowledge base."""
     import re as _re

@@ -137,7 +137,8 @@ def process_sheet(sheet_name, model_key, tone_key, limit, dry_run, sleep_s=1.0):
                 model_code=row["model_code"], color_name=row["color_name"],
                 arguments=row["arguments"], product_name=row["product_name"],
                 design_name=row["design_name"], row_brand=row["brand"],
-                material=row["material"], size=row["size"])
+                material=row["material"], size=row["size"],
+                category=row.get("category", ""))
             results = generate_batch_row_data(info, model_key, tone_key)
             written = ss.write_row_results(
                 sheet_name, row["row_num"], results, columns,

@@ -276,6 +276,36 @@ def color_prompt_block(colors):
             "V celém textu piš VÝHRADNĚ o této barvě - žádné jiné barvy z podkladů.")
 
 
+def category_prompt_block(product_info):
+    """Instrukce podle kategorie produktu: plavky / plazove obleceni / pradlo."""
+    cat = str(product_info.get("category", "") or "").lower()
+    if cat == "plavky":
+        return """
+KATEGORIE PRODUKTU: PLAVKY (nikoli spodní prádlo!) — KRITICKÉ PRAVIDLO
+- Jde o PLAVKY na pláž, k bazénu a na dovolenou. Text musí být jednoznačně o plavkách.
+- V názvu i v textech používej VŽDY plavkové názvosloví: "plavková podprsenka", "plavkové kalhotky",
+  "plavkové kalhotky do pasu", "plavkové brazilky", "bokové plavkové kalhotky", "jednodílné plavky", "tankiny".
+  NIKDY nepiš jen "podprsenka" nebo "kalhotky" bez slova plavkové.
+- ZAKÁZANÉ formulace (patří ke spodnímu prádlu, ne k plavkám): "pod oblečením", "pod tričkem",
+  "nerýsuje se pod oblečením", "neviditelné pod oblečením", "do práce", "na celý den v kanceláři",
+  "pod přiléhavé šaty", "bra-fitting poradna".
+- Piš o tom, na čem u plavek záleží: držení a opora i ve vodě a při pohybu, rychleschnoucí materiál,
+  odolnost vůči chloru, slané vodě a slunci, pohodlí při plavání i opalování, jistota na pláži,
+  tvarování postavy v plavkách, možnost kombinovat vrchní a spodní díl.
+- Kontext použití: dovolená, pláž, bazén, aquapark, léto — nikdy kancelář nebo každodenní nošení pod oblečením.
+"""
+    if cat == "plazove":
+        return """
+KATEGORIE PRODUKTU: PLÁŽOVÉ OBLEČENÍ (kaftan, pareo, plážové šaty, tunika) — KRITICKÉ PRAVIDLO
+- NEJDE o spodní prádlo ANI o plavky. NIKDY nepoužívej terminologii podprsenek ani kalhotek
+  (košíčky, kostice, ramínka, obvod, nohavičky, zadní díl, bra-fitting).
+- Piš o střihu, materiálu a splývavosti, délce, průsvitnosti, snadném oblékání přes plavky,
+  o stínu a ochraně před sluncem, o nošení na pláži, k bazénu, na procházku k moři i na drink.
+- Zdůrazni, že jde o doplněk přes plavky — ne o produkt, který se nosí pod oblečením.
+"""
+    return ""
+
+
 def execute_with_retry(api_func, *args, max_retries=5, initial_delay=2.0, backoff_factor=2.0, **kwargs):
     """
     Spustí zadanou API funkci s automatickým opakováním v případě přetížení nebo překročení limitů.
@@ -463,7 +493,7 @@ CHARAKTERISTIKA: {prod_char}
 OFICIÁLNÍ KONSTRUKČNÍ SPECIFIKACE STŘIHU (z Wordu): {prod_docx if prod_docx else 'Není specifikováno'}
 KLÍČOVÉ VÝHODY: {prod_benefits}
 DOPORUČENÉ PRODEJNÍ ARGUMENTY A TIPY STYLISTKY: {prod_recommendation if prod_recommendation else 'Nejsou specifikovány'}
-{color_prompt_block(product_info.get("all_colors"))}
+{color_prompt_block(product_info.get("all_colors"))}{category_prompt_block(product_info)}
 DŮLEŽITÉ UPOZORNĚNÍ K NÁZVŮM KOLEKCÍ: V textu NIKDY neuváděj ani nezmiňuj žádné názvy kolekcí (např. Selena, Tina, Olivia, atd.). Pokud se název jakékoliv kolekce objeví v původním popisu nebo v marketingových podkladech, ignoruj ho a nezmiňuj.
 PŮVODNÍ POPIS PRODUKTU: {prod_desc_clean}
 -----------------
@@ -711,6 +741,7 @@ def generate_batch_row_data(product_info, model_key, tone_key, use_simulation=Fa
     prod_title = product_info.get("generic_title", "Podprsenka Triola")
     prod_code = product_info.get("model_code", "")
     color_block = color_prompt_block(product_info.get("all_colors"))
+    category_block = category_prompt_block(product_info)
     prod_colors = ", ".join([c for c in product_info.get("all_colors", []) if str(c).strip()]) or "není uvedena"
     prod_cut = product_info.get("cut_name", "Neznámý střih")
     prod_char = product_info.get("characteristics", "")
@@ -812,7 +843,7 @@ CHARAKTERISTIKA: {prod_char}
 OFICIÁLNÍ KONSTRUKČNÍ SPECIFIKACE STŘIHU: {prod_docx if prod_docx else 'Není k dispozici'}
 KLÍČOVÉ VÝHODY: {prod_benefits}
 DOPORUČENÉ PRODEJNÍ ARGUMENTY A TIPY STYLISTKY: {prod_recommendation if prod_recommendation else 'Nejsou k dispozici'}
-{color_block}
+{color_block}{category_block}
 DŮLEŽITÉ UPOZORNĚNÍ K NÁZVŮM KOLEKCÍ (platí POUZE pro produkty značky Triola): V textu neuváděj názvy kolekcí Triola (např. Selena, Tina, Olivia). U cizích značek se řiď blokem PRAVIDLA PRO CIZÍ ZNAČKU.
 {brand_block}ZNAČKA V TEXTECH: Název značky piš VŽDY s velkým počátečním písmenem (Triola, Sassa) — v názvu produktu, v popisech i v metadatech. Nikdy malými písmeny.
 DŮLEŽITÉ UPOZORNĚNÍ K TYPU PRODUKTU: Piš o typu produktu uvedeném v NÁZEV PRODUKTU. Pokud produkt NENÍ spodní prádlo (např. osuška, župan, doplněk), NEPOUŽÍVEJ terminologii podprsenek (košíčky, kostice, ramínka, obvod, bra-fitting) a strukturu přizpůsob charakteru produktu (materiál, rozměry, použití, péče).

@@ -72,7 +72,7 @@ logging.info(f"Marketingová databáze úspěšně načtena. Počet modelů: {le
 merge_databases()
 
 def build_product_info(model_code, color_name="", arguments="", product_name="",
-                       design_name="", row_brand="", material="", size=""):
+                       design_name="", row_brand="", material="", size="", category=""):
     """
     Sestaví kontext produktu pro generování textů.
     Sdílená logika pro Excel import i Google Sheets - jediný zdroj pravdy
@@ -89,6 +89,13 @@ def build_product_info(model_code, color_name="", arguments="", product_name="",
     _m = _re.match(r"^(.*?)/\d{2,3}$", model_code)
     if _m and _m.group(1).strip():
         model_code = _m.group(1).strip()
+
+    # Typ produktu z podkladu (sloupec PRODUKT > argumenty > prefix kodu).
+    # detected_cat: 'plavky' | 'plazove' | 'pradlo' - rozhoduje o stylu textu.
+    detected_type, detected_cat = feed_parser.detect_product_type(
+        model_code, arguments, product_name, category)
+    if detected_type and not product_name:
+        product_name = detected_type
 
     if model_code in PRODUCTS_DB:
         product_info = dict(PRODUCTS_DB[model_code])
@@ -150,13 +157,17 @@ def build_product_info(model_code, color_name="", arguments="", product_name="",
                 "sales_arguments": arguments
             }
         else:
-            cut_data = feed_parser.detect_cut_properties(model_code, f"Podprsenka Triola {model_code}", "")
-            base_name = product_name.strip().capitalize() if product_name else ("Podprsenka" if not model_code.startswith('3') else "Kalhotky")
+            hint_title = f"{detected_type or 'Podprsenka'} Triola {model_code}"
+            cut_data = feed_parser.detect_cut_properties(model_code, hint_title, arguments or "")
+            base_name = (product_name.strip().capitalize() if product_name
+                         else (detected_type.capitalize() if detected_type
+                               else ("Podprsenka" if not model_code.startswith('3') else "Kalhotky")))
             product_info = {
                 "model_code": model_code,
                 "generic_title": f"{base_name} Triola {model_code}",
                 "brand": "Triola",
-                "type": "Dámské spodní prádlo" if not model_code.startswith('3') else "Dámské kalhotky",
+                "type": (detected_type.capitalize() if detected_type
+                         else ("Dámské spodní prádlo" if not model_code.startswith('3') else "Dámské kalhotky")),
                 "cut_name": cut_data["cut_name"],
                 "characteristics": cut_data["characteristics"],
                 "benefits": cut_data["benefits"],
@@ -168,6 +179,16 @@ def build_product_info(model_code, color_name="", arguments="", product_name="",
             }
         if material and "Materiál" not in str(product_info.get("characteristics", "")):
             product_info["characteristics"] = (str(product_info.get("characteristics", "")) + f" Materiál: {material}.").strip()
+    product_info["category"] = detected_cat
+    if detected_cat in ("plavky", "plazove"):
+        # u plavek nikdy nepouzivat pradlovou znalostni bazi z kodu fazony
+        product_info["type"] = (detected_type or "Plavky").capitalize()
+        if detected_cat == "plazove":
+            product_info["cut_name"] = "Neznámý střih"
+            product_info["benefits"] = []
+            product_info["characteristics"] = ""
+            product_info["docx_description"] = ""
+            product_info["recommendation"] = ""
     return product_info
 
 
@@ -696,7 +717,8 @@ def sheets_process_row():
         product_info = build_product_info(
             model_code=model_code, color_name=color_name, arguments=arguments,
             product_name=product_name, design_name=design_name, row_brand=row_brand,
-            material=material, size=size)
+            material=material, size=size,
+            category=sheets_service.sheet_category(sheet_name))
 
         # 2. Vygeneruj
         results = generate_batch_row_data(

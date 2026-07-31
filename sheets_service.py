@@ -161,6 +161,18 @@ def brand_from_sheet_name(sheet_name):
 CODE_PREFIX_BRANDS = (("SAS", "Sassa"),)
 
 
+def sheet_category(sheet_name):
+    """
+    Kategorie listu podle nazvu. Rozhoduje o tom, zda se pise o PLAVKACH
+    nebo o spodnim pradle. Radek s plazovym oblecenim (kaftan, pareo...)
+    se pozna dal podle podkladu.
+    """
+    low = str(sheet_name or "").lower()
+    if "plavky" in low or "swim" in low or "plavk" in low:
+        return "plavky"
+    return ""
+
+
 def brand_from_code(model_code):
     up = str(model_code or "").upper()
     for prefix, brand in CODE_PREFIX_BRANDS:
@@ -226,6 +238,7 @@ def read_sheet_bundle(sheet_name, spreadsheet_id=DEFAULT_SPREADSHEET_ID, max_row
         return str(v).strip() if v is not None else ""
 
     sheet_brand = brand_from_sheet_name(sheet_name)
+    sheet_cat = sheet_category(sheet_name)
     rows = []
     for r_i in range(header_row, len(values)):
         row = values[r_i]
@@ -251,6 +264,7 @@ def read_sheet_bundle(sheet_name, spreadsheet_id=DEFAULT_SPREADSHEET_ID, max_row
                       or brand_from_code(code)),
             "material": cell(row, mapping.get("material", -1)),
             "size": cell(row, mapping.get("size", -1)),
+            "category": sheet_cat,
             "has_output": bool(cell(row, mapping.get("eshop_name", -1))),
         })
 
@@ -426,6 +440,7 @@ def read_sheet(sheet_name, spreadsheet_id=DEFAULT_SPREADSHEET_ID, max_rows=2000)
         return str(v).strip() if v is not None else ""
 
     sheet_brand = brand_from_sheet_name(sheet_name)
+    sheet_cat = sheet_category(sheet_name)
 
     rows = []
     for r_i in range(header_row, len(values)):
@@ -459,6 +474,7 @@ def read_sheet(sheet_name, spreadsheet_id=DEFAULT_SPREADSHEET_ID, max_rows=2000)
             "material": cell(row, mapping.get("material", -1)),
             "size": cell(row, mapping.get("size", -1)),
             # nahled, zda uz radek ma vygenerovany nazev
+            "category": sheet_cat,
             "has_output": bool(cell(row, mapping.get("eshop_name", -1))),
         })
 
