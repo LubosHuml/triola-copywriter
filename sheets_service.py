@@ -291,6 +291,34 @@ def create_missing_columns(sheet_name, headers, columns, missing, header_row,
         return columns, []
     svc = get_service()
     next_col = len(headers)
+
+    # Mrizka listu ma pevnou sirku - kdyz se nove sloupce nevejdou,
+    # nejdriv ji rozsirime (jinak Google vrati HTTP 400 "exceeds grid limits").
+    try:
+        meta = api_call(svc.spreadsheets().get(
+            spreadsheetId=spreadsheet_id,
+            fields="sheets(properties(sheetId,title,gridProperties/columnCount))"),
+            "zjištění šířky listu")
+        sheet_id, col_count = None, None
+        for sh in meta.get("sheets", []):
+            props = sh.get("properties", {})
+            if props.get("title") == sheet_name:
+                sheet_id = props.get("sheetId")
+                col_count = props.get("gridProperties", {}).get("columnCount")
+                break
+        needed = next_col + len(missing)
+        if sheet_id is not None and col_count is not None and needed > col_count:
+            api_call(svc.spreadsheets().batchUpdate(
+                spreadsheetId=spreadsheet_id,
+                body={"requests": [{"appendDimension": {
+                    "sheetId": sheet_id, "dimension": "COLUMNS",
+                    "length": needed - col_count}}]}),
+                f"rozšíření listu '{sheet_name}'")
+            logging.info(f"List '{sheet_name}' rozšířen o {needed - col_count} sloupců "
+                         f"(z {col_count} na {needed}).")
+    except Exception as e:
+        logging.warning(f"Nepodařilo se ověřit šířku listu '{sheet_name}': {str(e)[:120]}")
+
     created, cells = [], []
     for key in missing:
         names = WRITABLE_COLUMNS[key]
