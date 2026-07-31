@@ -288,17 +288,27 @@ def generate():
 
 @app.route('/api/feed/update', methods=['POST'])
 def update_feed():
-    """Forces download and reload of the XML feed and Excel marketing sheets."""
+    """
+    Aktualizuje XML feed produktu. Stary ~100MB marketingovy Excel se
+    ve vychozim stavu NESTAHUJE (pouzije se cache) - stahovani a parsovani
+    takoveho souboru zvedne pamet natolik, ze na 512MB instanci hrozi pad.
+    Vynuti se jen parametrem ?include_excel=1 (pouzivat lokalne, ne na Renderu).
+    """
     global PRODUCTS_DB, MARKETING_DB
+    include_excel = request.args.get('include_excel') in ('1', 'true', 'yes')
     try:
-        logging.info("Vynucená aktualizace XML feedu a Excelu z rozhraní...")
+        logging.info(f"Vynucená aktualizace XML feedu"
+                     f"{' + starého Excelu' if include_excel else ' (Excel z cache)'}...")
         PRODUCTS_DB = feed_parser.build_and_cache_products(force_update=True)
-        MARKETING_DB = sheet_parser.build_marketing_db(force_update=True)
+        MARKETING_DB = sheet_parser.build_marketing_db(force_update=include_excel)
         merge_databases()
+        import gc
+        gc.collect()
         return jsonify({
             "success": True, 
             "product_count": len(PRODUCTS_DB),
-            "marketing_count": len(MARKETING_DB)
+            "marketing_count": len(MARKETING_DB),
+            "excel_refreshed": include_excel
         })
     except Exception as e:
         logging.error(f"Chyba při aktualizaci feedů: {e}")
@@ -772,6 +782,28 @@ def automation_toggle():
     except Exception as e:
         logging.error(f"Chyba při přepínání automatiky: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+
+@app.route('/api/health/memory', methods=['GET'])
+def health_memory():
+    """Kolik paměti aplikace právě zabírá (diagnostika pádů na Renderu)."""
+    data = {"products": len(PRODUCTS_DB), "marketing": len(MARKETING_DB)}
+    try:
+        import resource
+        # ru_maxrss je na Linuxu v kB
+        data["peak_mb"] = round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 1)
+    except Exception:
+        pass
+    try:
+        with open("/proc/self/status") as f:
+            for line in f:
+                if line.startswith("VmRSS:"):
+                    data["rss_mb"] = round(int(line.split()[1]) / 1024, 1)
+                    break
+    except Exception:
+        pass
+    return jsonify(data)
 
 
 if __name__ == '__main__':

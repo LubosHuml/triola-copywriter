@@ -21,10 +21,14 @@ def download_excel_sheet():
             download_url, 
             headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) TriolaCopywriter/1.0'}
         )
+        # Streamovane stahovani po blocich - response.read() by nacetl
+        # cely ~100MB soubor do RAM naraz a shodil instanci na Renderu.
+        import shutil
         with urllib.request.urlopen(req) as response:
             with open(EXCEL_FILE, "wb") as f:
-                f.write(response.read())
-        logging.info("Marketingový Excel úspěšně stažen a uložen.")
+                shutil.copyfileobj(response, f, length=1024 * 256)
+        size_mb = os.path.getsize(EXCEL_FILE) / 1024 / 1024
+        logging.info(f"Marketingový Excel úspěšně stažen a uložen ({size_mb:.0f} MB).")
         return True
     except Exception as e:
         logging.error(f"Chyba při stahování marketingového Excelu: {e}")
