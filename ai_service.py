@@ -3,7 +3,6 @@ import logging
 import re
 import time
 from dotenv import load_dotenv
-import anthropic
 # openai a google-genai se importuji az pri prvnim pouziti (lazy) - grpc stack
 # Gemini SDK sam o sobe zabira ~150 MB RAM, coz na 512MB Renderu zpusobovalo OOM.
 
@@ -355,6 +354,7 @@ def generate_with_anthropic(api_key, model, system_prompt, user_prompt):
     """Call Anthropic API using message structure.
     Novejsi modely (Claude Sonnet 5+) parametr temperature odmitaji (400 deprecated) -
     v takovem pripade se volani zopakuje bez nej."""
+    import anthropic  # lazy - setri ~40 MB RAM pri startu
     client = anthropic.Anthropic(api_key=api_key)
     kwargs = dict(
         model=model,

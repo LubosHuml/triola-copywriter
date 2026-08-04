@@ -1,5 +1,4 @@
 import os
-import openpyxl
 import re
 import logging
 import csv
@@ -324,6 +323,7 @@ def parse_batch_excel(file_path, products_db):
         raise FileNotFoundError(f"Soubor {file_path} neexistuje.")
         
     logging.info(f"Načítání Excelu: {file_path}")
+    import openpyxl  # lazy - setri ~23 MB RAM pri startu
     wb = openpyxl.load_workbook(file_path, data_only=True)
     ws = wb.active
     
@@ -432,6 +432,7 @@ def write_row_results_to_excel(file_path, row_num, results):
     Writes the 12 generated copywriting results (CZ + SK) into Excel columns.
     If the columns do not exist in the sheet, they are added at the end of the header row.
     """
+    import openpyxl  # lazy - setri ~23 MB RAM pri startu
     wb = openpyxl.load_workbook(file_path)
     ws = wb.active
     
@@ -581,6 +582,7 @@ def parse_seo_batch(file_path):
                     continue
                 rows.append((idx, row))
     elif ext in ['.xlsx', '.xls']:
+        import openpyxl  # lazy - setri ~23 MB RAM pri startu
         wb = openpyxl.load_workbook(file_path, data_only=True)
         ws = wb.active
         
@@ -724,6 +726,7 @@ def write_seo_to_file(file_path, row_num, seo_data):
             writer.writerows(all_rows)
             
     elif ext in ['.xlsx', '.xls']:
+        import openpyxl  # lazy - setri ~23 MB RAM pri startu
         wb = openpyxl.load_workbook(file_path)
         ws = wb.active
         

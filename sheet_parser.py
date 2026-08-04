@@ -1,4 +1,3 @@
-import openpyxl
 import re
 import os
 import json
@@ -81,6 +80,7 @@ def build_marketing_db(force_update=False):
     try:
         # read_only=True: streamovane cteni - nezvedne pamet o gigabajty
         # (plny rezim openpyxl drzi cely 100MB sesit vcetne stylu v RAM -> OOM na Renderu)
+        import openpyxl  # lazy - setri ~23 MB RAM pri startu
         wb = openpyxl.load_workbook(EXCEL_FILE, data_only=True, read_only=True)
 
         # We focus on sheets containing "Triola"
