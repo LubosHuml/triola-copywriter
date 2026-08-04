@@ -46,7 +46,11 @@ WRITABLE_COLUMNS = {
     "meta_desc_sk":   ["ESHOP META DESCRIPTION SK", "Meta Description SK"],
 }
 
-_service_cache = [None]
+# Klient Google API (httplib2) NENI bezpecny pro sdileni mezi vlakny -
+# sdilene spojeni zpusobuje chyby "DECRYPTION_FAILED_OR_BAD_RECORD_MAC".
+# Kazde vlakno proto dostane vlastni instanci.
+import threading
+_thread_local = threading.local()
 
 
 # ---------------------------------------------------------------- autentizace
@@ -68,17 +72,22 @@ def get_credentials_info():
     )
 
 
-def get_service():
-    """Vraci autorizovanou instanci Sheets API v4."""
-    if _service_cache[0] is not None:
-        return _service_cache[0]
+def get_service(fresh=False):
+    """Vraci autorizovanou instanci Sheets API v4 (vlastni pro kazde vlakno)."""
+    if not fresh and getattr(_thread_local, "service", None) is not None:
+        return _thread_local.service
     from google.oauth2 import service_account
     from googleapiclient.discovery import build
 
     info = get_credentials_info()
     creds = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
-    _service_cache[0] = build("sheets", "v4", credentials=creds, cache_discovery=False)
-    return _service_cache[0]
+    _thread_local.service = build("sheets", "v4", credentials=creds, cache_discovery=False)
+    return _thread_local.service
+
+
+def reset_service():
+    """Zahodi klienta - pouziva se po chybe spojeni, aby se navazalo nove."""
+    _thread_local.service = None
 
 
 def get_service_account_email():
@@ -199,7 +208,13 @@ def api_call(request, what="Sheets API", max_tries=6):
             code = getattr(getattr(e, "resp", None), "status", None)
             msg = str(e)
             transient = (code in (429, 500, 502, 503, 504)
-                         or "Quota exceeded" in msg or "rateLimitExceeded" in msg)
+                         or "Quota exceeded" in msg or "rateLimitExceeded" in msg
+                         or "SSL" in msg or "BAD_RECORD_MAC" in msg or "EOF occurred" in msg
+                         or "Connection reset" in msg or "Connection aborted" in msg
+                         or "timed out" in msg.lower() or "BrokenPipe" in type(e).__name__)
+            if transient and ("SSL" in msg or "EOF occurred" in msg
+                              or "Connection" in msg or "BAD_RECORD_MAC" in msg):
+                reset_service()   # rozbite spojeni zahodit a navazat nove
             if not transient or attempt == max_tries:
                 raise
             wait = delay + random.uniform(0, 1.5)
@@ -627,7 +642,12 @@ def check_access(spreadsheet_id=DEFAULT_SPREADSHEET_ID):
         result["can_write"] = True
         result["ok"] = True
     except Exception as e:
-        result["error"] = f"Zápis selhal (nasdílej tabulku service accountu jako Editor): {e}"
+        code = getattr(getattr(e, "resp", None), "status", None)
+        if code in (401, 403):
+            result["error"] = (f"Zápis zamítnut - nasdílej tabulku service accountu "
+                               f"jako Editor. ({e})")
+        else:
+            result["error"] = f"Zápis selhal kvůli chybě spojení, zkus to znovu: {e}"
     return result
 
 
