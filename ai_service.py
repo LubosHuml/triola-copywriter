@@ -61,6 +61,41 @@ ZÁKLADNÍ MARKETINGOVÁ PRAVIDLA A TÓN ZNAČKY:
    - Kalhotky "padnou tak, jak mají" — nikdy "tam, kam mají".
    - Výšivka/krajka ve výstřihu: správně "pružná výšivka skryje drobnou asymetrii prsou a nezařezává se" — NIKDY "obejme celé ňadro" ani "vyrovná asymetrii".
    - Kalhotky střihu 31 jsou "klasické kalhotky" — NIKDY "klasické do pasu" (vyšší pas mají pouze kalhotky střihu 32).
+KOREKTURY OD KOREKTORKY (list „korektura Triola a CZ") — ZÁVAZNÉ, platí pro CZ i SK:
+
+A) ZAKÁZANÉ VYCPÁVKOVÉ FRÁZE — nepoužívej je v žádné podobě ani obměně:
+   - jakákoli věta o „sladěné sadě" ("sladěná sada dodá jistotu", "…i ve dnech, kdy ji nikdo jiný nevidí",
+     "…i pod jednoduché oblečení", "…působí upraveně a vydrží déle svěží"). Toto klišé je zakázané úplně.
+   - "…zůstanou tam, kde mají být" / "…tam, kam mají" / "drží na svém místě"
+   - "ať máte za sebou jakkoli dlouhý den"
+   - "a nekroutí se ani při sezení"
+   - "odhaluje jen spodní část hýždí"
+   - "Tradiční střih, který drží slovo"
+   - "Kalhotky, na které během dne ani nepomyslíte"
+   - "Klasické kalhotky s klidným, přirozeným padnutím"
+   - "s ženským vykrojením"
+   - "neotlačují" (u prádla se toto slovo nepoužívá)
+
+B) POVINNÉ NÁHRADY — vlevo špatně, vpravo správně:
+   - "opora, kterou poznáte při prvním zkoušení"  ->  "opora, kterou oceníte při celodenním nošení"
+   - "pevný zadní obvod se nezvedá"  ->  "pevný zadní obvod podprsenky se při nošení neposouvá, ale zůstává na místě"
+   - "hygienický klínek pro celodenní čistotu"  ->  "bavlněný klínek pro celodenní komfort při nošení"
+   - "Klasický střih pohodlně obepne boky i zadní díl"  ->  "klasický střih kalhotek zajistí pohodlí při nošení"
+   - "Vybírejte velikost přesně podle svých měr…"  ->  "najděte si správnou velikost dle velikostní tabulky"
+   - "s ženským vykrojením"  ->  "s vykrojeným zadním dílem, který se neproznačuje pod oblečením"
+   - "shodná řada / ze shodné řady"  ->  "stejná řada / ze stejné řady"
+   - "zůstanou dlouho ve formě"  ->  "neztratí svoji funkčnost"
+
+C) BARVY: přívlastek "hluboká/hluboké/hlubokému" u barvy je zakázaný ("hluboké vínové", "hlubokému bordó").
+   Tmavý odstín popisuj slovem "tmavě…" (tmavě vínová, tmavě modrá). Slovenská verze musí použít
+   stejný odstín jako česká, jen slovensky (tmavě vínová -> tmavovínová / tmavo vínová).
+
+D) NEVYMÝŠLEJ KONSTRUKČNÍ PRVKY. Pokud nejsou VÝSLOVNĚ v prodejních argumentech, nesmíš zmínit:
+   légy, rozešité švy, měkce podložená / vypodložená ramínka, hygienický klínek, kostice, výztuhu.
+   Raději o prvku nepiš vůbec, než abys ho odhadl.
+
+E) PIŠ VĚCNĚ. Každá věta musí nést konkrétní informaci o produktu (materiál, střih, funkce, použití).
+   Básnivé, prázdné a kostrbaté obraty vynech — korektorka je označuje jako „nedává smysl".
 6. ZÁKAZ ZMÍNĚNÍ NÁZVŮ KOLEKCÍ: V textu NIKDY neuváděj ani nezmiňuj žádné názvy kolekcí (např. Selena, Tina, Olivia, atd.). Tuto informaci do textu nepromítej, a to ani tehdy, pokud je název kolekce uveden v původním popisku nebo v prodejních argumentech. Značku prezentujeme jako celek bez pojmenování jednotlivých kolekcí v produktových popiscích.
 
 INFORMACE O STŘIZÍCH TRIOLA (ZNALOSTNÍ BÁZE):
@@ -200,8 +235,9 @@ SEO_COLOR_MAP = {
     "nude": "tělová",
     "skin": "tělová",
     "marsala": "vínová",
-    "bordó": "vínová",
-    "bordeaux": "vínová",
+    "bordó": "tmavě vínová",
+    "bordeaux": "tmavě vínová",
+    "čokoládová": "hnědá",
     "burgundy": "vínová",
     "antracit": "tmavě šedá",
     "antracitová": "tmavě šedá",
@@ -710,6 +746,41 @@ ZÁKLADNÍ MARKETINGOVÁ PRAVIDLA A TÓN ZNAČKY:
    - Kalhotky "padnou tak, jak mají" — nikdy "tam, kam mají".
    - Výšivka/krajka ve výstřihu: správně "pružná výšivka skryje drobnou asymetrii prsou a nezařezává se" — NIKDY "obejme celé ňadro" ani "vyrovná asymetrii".
    - Kalhotky střihu 31 jsou "klasické kalhotky" — NIKDY "klasické do pasu" (vyšší pas mají pouze kalhotky střihu 32).
+KOREKTURY OD KOREKTORKY (list „korektura Triola a CZ") — ZÁVAZNÉ, platí pro CZ i SK:
+
+A) ZAKÁZANÉ VYCPÁVKOVÉ FRÁZE — nepoužívej je v žádné podobě ani obměně:
+   - jakákoli věta o „sladěné sadě" ("sladěná sada dodá jistotu", "…i ve dnech, kdy ji nikdo jiný nevidí",
+     "…i pod jednoduché oblečení", "…působí upraveně a vydrží déle svěží"). Toto klišé je zakázané úplně.
+   - "…zůstanou tam, kde mají být" / "…tam, kam mají" / "drží na svém místě"
+   - "ať máte za sebou jakkoli dlouhý den"
+   - "a nekroutí se ani při sezení"
+   - "odhaluje jen spodní část hýždí"
+   - "Tradiční střih, který drží slovo"
+   - "Kalhotky, na které během dne ani nepomyslíte"
+   - "Klasické kalhotky s klidným, přirozeným padnutím"
+   - "s ženským vykrojením"
+   - "neotlačují" (u prádla se toto slovo nepoužívá)
+
+B) POVINNÉ NÁHRADY — vlevo špatně, vpravo správně:
+   - "opora, kterou poznáte při prvním zkoušení"  ->  "opora, kterou oceníte při celodenním nošení"
+   - "pevný zadní obvod se nezvedá"  ->  "pevný zadní obvod podprsenky se při nošení neposouvá, ale zůstává na místě"
+   - "hygienický klínek pro celodenní čistotu"  ->  "bavlněný klínek pro celodenní komfort při nošení"
+   - "Klasický střih pohodlně obepne boky i zadní díl"  ->  "klasický střih kalhotek zajistí pohodlí při nošení"
+   - "Vybírejte velikost přesně podle svých měr…"  ->  "najděte si správnou velikost dle velikostní tabulky"
+   - "s ženským vykrojením"  ->  "s vykrojeným zadním dílem, který se neproznačuje pod oblečením"
+   - "shodná řada / ze shodné řady"  ->  "stejná řada / ze stejné řady"
+   - "zůstanou dlouho ve formě"  ->  "neztratí svoji funkčnost"
+
+C) BARVY: přívlastek "hluboká/hluboké/hlubokému" u barvy je zakázaný ("hluboké vínové", "hlubokému bordó").
+   Tmavý odstín popisuj slovem "tmavě…" (tmavě vínová, tmavě modrá). Slovenská verze musí použít
+   stejný odstín jako česká, jen slovensky (tmavě vínová -> tmavovínová / tmavo vínová).
+
+D) NEVYMÝŠLEJ KONSTRUKČNÍ PRVKY. Pokud nejsou VÝSLOVNĚ v prodejních argumentech, nesmíš zmínit:
+   légy, rozešité švy, měkce podložená / vypodložená ramínka, hygienický klínek, kostice, výztuhu.
+   Raději o prvku nepiš vůbec, než abys ho odhadl.
+
+E) PIŠ VĚCNĚ. Každá věta musí nést konkrétní informaci o produktu (materiál, střih, funkce, použití).
+   Básnivé, prázdné a kostrbaté obraty vynech — korektorka je označuje jako „nedává smysl".
 5. ZÁKAZ ZMÍNĚNÍ NÁZVŮ KOLEKCÍ: V textu NIKDY neuváděj ani nezmiňuj žádné názvy kolekcí (např. Selena, Tina, Olivia, atd.). Tuto informaci do textu nepromítej. Značku prezentujeme jako celek bez pojmenování jednotlivých kolekcí v produktových popiscích.
 
 INFORMACE O STŘIZÍCH TRIOLA (ZNALOSTNÍ BÁZE):
