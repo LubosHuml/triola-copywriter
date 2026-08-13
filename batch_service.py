@@ -158,6 +158,8 @@ def detect_header_mapping(rows):
         "brand": -1,
         "material": -1,
         "size": -1,
+        "strap_width": -1,
+        "closure": -1,
         "eshop_name": -1,
         "short_name": -1,
         "eshop_desc1": -1,
@@ -211,6 +213,15 @@ def detect_header_mapping(rows):
                 if current_map["material"] == -1:
                     current_map["material"] = idx
                     score += 1
+            # Technicke parametry: sire raminek (mm) a sire/typ zapinani (cm)
+            elif "ramínek" in val_lower or "raminek" in val_lower:
+                if current_map["strap_width"] == -1:
+                    current_map["strap_width"] = idx
+                    score += 2
+            elif "zapínání" in val_lower or "zapinani" in val_lower:
+                if current_map["closure"] == -1:
+                    current_map["closure"] = idx
+                    score += 2
             elif "velikost" in val_lower:
                 if current_map["size"] == -1:
                     current_map["size"] = idx

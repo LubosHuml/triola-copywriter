@@ -279,6 +279,8 @@ def read_sheet_bundle(sheet_name, spreadsheet_id=DEFAULT_SPREADSHEET_ID, max_row
                       or brand_from_code(code)),
             "material": cell(row, mapping.get("material", -1)),
             "size": cell(row, mapping.get("size", -1)),
+            "strap_width": cell(row, mapping.get("strap_width", -1)),
+            "closure": cell(row, mapping.get("closure", -1)),
             "category": sheet_cat,
             "has_output": bool(cell(row, mapping.get("eshop_name", -1))),
         })
@@ -488,6 +490,8 @@ def read_sheet(sheet_name, spreadsheet_id=DEFAULT_SPREADSHEET_ID, max_rows=2000)
             "brand": row_brand,
             "material": cell(row, mapping.get("material", -1)),
             "size": cell(row, mapping.get("size", -1)),
+            "strap_width": cell(row, mapping.get("strap_width", -1)),
+            "closure": cell(row, mapping.get("closure", -1)),
             # nahled, zda uz radek ma vygenerovany nazev
             "category": sheet_cat,
             "has_output": bool(cell(row, mapping.get("eshop_name", -1))),

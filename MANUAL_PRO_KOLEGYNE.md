@@ -35,6 +35,43 @@ pozná je podle roku v názvu (letos `26`, příští rok `27`).
 nebude — a robot si nesmí nic vymýšlet. Čím konkrétnější argumenty, tím lepší text.
 Pište materiály, střihy a funkce, ne obecnosti („krásná", „kvalitní" robot nevyužije).
 
+## 2b. „Nejdůležitější:" — co MUSÍ být v odrážkách
+
+Do sloupce **PRODEJNÍ ARGUMENTY** můžete na konec připsat klíčové slovo
+**`Nejdůležitější:`** a za ním body oddělené čárkou. Robot z nich udělá
+odrážky v produktovém popisu — každý bod dostane vlastní řádek.
+
+```
+klasický střih s luxusním úpletem, pohodlné gumičky v pase.
+Nejdůležitější: klasický střih, luxusní úplet s lesklým motivem, krokový klínek ze 100% bavlny
+```
+
+Výsledek v popisu:
+
+- klasický střih s pohodlnou výškou v pase, který se nezařezává
+- luxusní pružný úplet s lesklým motivem
+- krokový klínek ze 100 % bavlny pro celodenní komfort při nošení
+
+Pravidla: pořadí bodů se zachová, formulace robot vylepší, ale význam nezmění.
+Slovenská verze má stejné odrážky. **Když klíčové slovo nepoužijete, text se
+vygeneruje jako dosud** — nic se nerozbije.
+
+## 2c. Technické parametry (nepovinné, hlavně u Trioly)
+
+| Sloupec | Co vyplnit | Formát |
+|---|---|---|
+| **Šíře ramínek** | šířka v mm pro každou velikost | `65E - 12` (každá velikost na nový řádek) |
+| **Šíře zapínání** | typ a šířka zapínání pro každou velikost | `65E - H+O/02 úzké - 3 cm` |
+
+Robot z toho sám udělá srozumitelné shrnutí pro zákaznici, například:
+
+> Šířka ramínek 12–18 mm podle velikosti – u větších velikostí jsou ramínka širší.
+> Zapínání vzadu: úzké 2 řady háčků, šířka 3 cm u menších velikostí (např. 65E, 65F),
+> 2 řady háčků, šířka 3,8 cm u větších (např. 65H, 70G).
+
+Čísla nikdy nemění ani nezaokrouhluje. Sloupce jsou nepovinné — když je nevyplníte,
+text se vygeneruje bez nich.
+
 ## 3. Doporučené sloupce (zlepšují výsledek)
 
 | Sloupec | K čemu slouží | Příklad |

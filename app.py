@@ -72,7 +72,8 @@ logging.info(f"Marketingová databáze úspěšně načtena. Počet modelů: {le
 merge_databases()
 
 def build_product_info(model_code, color_name="", arguments="", product_name="",
-                       design_name="", row_brand="", material="", size="", category=""):
+                       design_name="", row_brand="", material="", size="", category="",
+                       strap_width="", closure=""):
     """
     Sestaví kontext produktu pro generování textů.
     Sdílená logika pro Excel import i Google Sheets - jediný zdroj pravdy
@@ -179,6 +180,20 @@ def build_product_info(model_code, color_name="", arguments="", product_name="",
             }
         if material and "Materiál" not in str(product_info.get("characteristics", "")):
             product_info["characteristics"] = (str(product_info.get("characteristics", "")) + f" Materiál: {material}.").strip()
+    # Klicove body ("Nejdůležitější: ...") a technicke parametry od kolegyn
+    base_args, key_points = feed_parser.extract_key_points(arguments)
+    product_info["key_points"] = key_points
+    if key_points:
+        product_info["sales_arguments"] = base_args or product_info.get("sales_arguments", "")
+    tech = []
+    sw = feed_parser.summarize_strap_width(strap_width)
+    cl = feed_parser.summarize_closure(closure)
+    if sw:
+        tech.append(sw)
+    if cl:
+        tech.append(cl)
+    product_info["tech_specs"] = tech
+
     product_info["category"] = detected_cat
     if detected_cat in ("plavky", "plazove"):
         # u plavek nikdy nepouzivat pradlovou znalostni bazi z kodu fazony
@@ -728,7 +743,8 @@ def sheets_process_row():
             model_code=model_code, color_name=color_name, arguments=arguments,
             product_name=product_name, design_name=design_name, row_brand=row_brand,
             material=material, size=size,
-            category=sheets_service.sheet_category(sheet_name))
+            category=sheets_service.sheet_category(sheet_name),
+            strap_width=data.get('strap_width', ''), closure=data.get('closure', ''))
 
         # 2. Vygeneruj
         results = generate_batch_row_data(

@@ -75,6 +75,7 @@ A) ZAKÁZANÉ VYCPÁVKOVÉ FRÁZE — nepoužívej je v žádné podobě ani obm
    - "Klasické kalhotky s klidným, přirozeným padnutím"
    - "s ženským vykrojením"
    - "neotlačují" (u prádla se toto slovo nepoužívá)
+   - "rozešité švy" (nikdy, ani když to zmiňuje znalostní báze střihu — piš "měkké švy")
 
 B) POVINNÉ NÁHRADY — vlevo špatně, vpravo správně:
    - "opora, kterou poznáte při prvním zkoušení"  ->  "opora, kterou oceníte při celodenním nošení"
@@ -311,6 +312,41 @@ def color_prompt_block(colors):
             "V celém textu piš VÝHRADNĚ o této barvě - žádné jiné barvy z podkladů.")
 
 
+def key_points_block(product_info):
+    """
+    Body z klicoveho slova "Nejdůležitější:" v prodejnich argumentech.
+    Kdyz jsou vyplnene, MUSI zaznit v odrazkach hlavniho popisu.
+    """
+    pts = product_info.get("key_points") or []
+    if not pts:
+        return ""
+    body = "\n".join(f"   - {p}" for p in pts)
+    return (f"""
+POVINNÉ ODRÁŽKY (kolegyně je označila slovem „Nejdůležitější:") — KRITICKÉ PRAVIDLO:
+V hlavním popisu (eshop_desc1) MUSÍ být seznam <ul> a v něm samostatná <li> odrážka
+pro KAŽDÝ z těchto bodů. Formuluj je čtivě a prodejně, ale význam zachovej přesně
+a nic z nich nevynechávej:
+{body}
+   Pořadí odrážek zachovej. Další odrážku navíc přidávej jen tehdy, když je opřená
+   o prodejní argumenty. Ve slovenské verzi musí být stejné odrážky, jen slovensky.
+""")
+
+
+def tech_specs_block(product_info):
+    """Technicke parametry (sirka raminek, zapinani) - fakta, ktera se nesmi menit."""
+    tech = product_info.get("tech_specs") or []
+    if not tech:
+        return ""
+    body = "\n".join(f"   - {t}" for t in tech)
+    return (f"""
+TECHNICKÉ PARAMETRY OD VÝROBY — uveď je v popisu, aby zákaznice hned věděla, co čekat:
+{body}
+   Tato čísla jsou závazná: NEMĚŇ je, nezaokrouhluj a nedomýšlej k nim nic dalšího.
+   Zapracuj je přirozeně do textu nebo jako samostatnou odrážku (klidně i v POPIS 2).
+   Ve slovenské verzi uveď stejné hodnoty.
+""")
+
+
 def category_prompt_block(product_info):
     """Instrukce podle kategorie produktu: plavky / plazove obleceni / pradlo."""
     cat = str(product_info.get("category", "") or "").lower()
@@ -529,7 +565,7 @@ CHARAKTERISTIKA: {prod_char}
 OFICIÁLNÍ KONSTRUKČNÍ SPECIFIKACE STŘIHU (z Wordu): {prod_docx if prod_docx else 'Není specifikováno'}
 KLÍČOVÉ VÝHODY: {prod_benefits}
 DOPORUČENÉ PRODEJNÍ ARGUMENTY A TIPY STYLISTKY: {prod_recommendation if prod_recommendation else 'Nejsou specifikovány'}
-{color_prompt_block(product_info.get("all_colors"))}{category_prompt_block(product_info)}
+{color_prompt_block(product_info.get("all_colors"))}{category_prompt_block(product_info)}{key_points_block(product_info)}{tech_specs_block(product_info)}
 DŮLEŽITÉ UPOZORNĚNÍ K NÁZVŮM KOLEKCÍ: V textu NIKDY neuváděj ani nezmiňuj žádné názvy kolekcí (např. Selena, Tina, Olivia, atd.). Pokud se název jakékoliv kolekce objeví v původním popisu nebo v marketingových podkladech, ignoruj ho a nezmiňuj.
 PŮVODNÍ POPIS PRODUKTU: {prod_desc_clean}
 -----------------
@@ -760,6 +796,7 @@ A) ZAKÁZANÉ VYCPÁVKOVÉ FRÁZE — nepoužívej je v žádné podobě ani obm
    - "Klasické kalhotky s klidným, přirozeným padnutím"
    - "s ženským vykrojením"
    - "neotlačují" (u prádla se toto slovo nepoužívá)
+   - "rozešité švy" (nikdy, ani když to zmiňuje znalostní báze střihu — piš "měkké švy")
 
 B) POVINNÉ NÁHRADY — vlevo špatně, vpravo správně:
    - "opora, kterou poznáte při prvním zkoušení"  ->  "opora, kterou oceníte při celodenním nošení"
@@ -813,6 +850,8 @@ def generate_batch_row_data(product_info, model_key, tone_key, use_simulation=Fa
     prod_code = product_info.get("model_code", "")
     color_block = color_prompt_block(product_info.get("all_colors"))
     category_block = category_prompt_block(product_info)
+    key_points_b = key_points_block(product_info)
+    tech_b = tech_specs_block(product_info)
     prod_colors = ", ".join([c for c in product_info.get("all_colors", []) if str(c).strip()]) or "není uvedena"
     prod_cut = product_info.get("cut_name", "Neznámý střih")
     prod_char = product_info.get("characteristics", "")
@@ -914,7 +953,7 @@ CHARAKTERISTIKA: {prod_char}
 OFICIÁLNÍ KONSTRUKČNÍ SPECIFIKACE STŘIHU: {prod_docx if prod_docx else 'Není k dispozici'}
 KLÍČOVÉ VÝHODY: {prod_benefits}
 DOPORUČENÉ PRODEJNÍ ARGUMENTY A TIPY STYLISTKY: {prod_recommendation if prod_recommendation else 'Nejsou k dispozici'}
-{color_block}{category_block}
+{color_block}{category_block}{key_points_b}{tech_b}
 DŮLEŽITÉ UPOZORNĚNÍ K NÁZVŮM KOLEKCÍ (platí POUZE pro produkty značky Triola): V textu neuváděj názvy kolekcí Triola (např. Selena, Tina, Olivia). U cizích značek se řiď blokem PRAVIDLA PRO CIZÍ ZNAČKU.
 {brand_block}ZNAČKA V TEXTECH: Název značky piš VŽDY s velkým počátečním písmenem (Triola, Sassa) — v názvu produktu, v popisech i v metadatech. Nikdy malými písmeny.
 DŮLEŽITÉ UPOZORNĚNÍ K TYPU PRODUKTU: Piš o typu produktu uvedeném v NÁZEV PRODUKTU. Pokud produkt NENÍ spodní prádlo (např. osuška, župan, doplněk), NEPOUŽÍVEJ terminologii podprsenek (košíčky, kostice, ramínka, obvod, bra-fitting) a strukturu přizpůsob charakteru produktu (materiál, rozměry, použití, péče).

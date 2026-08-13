@@ -71,6 +71,107 @@ BEACHWEAR_WORDS = ("kaftan", "pareo", "plážov", "plazov", "tunik", "šaty", "s
                    "sukně", "sukne", "poncho", "kimono", "overal")
 
 
+# ---------------------------------------------------------------- podklady od kolegyn
+
+def extract_key_points(arguments):
+    """
+    Klicova slovo "Nejdůležitější:" v prodejnich argumentech.
+    Vse za nim (oddelene carkami) jsou body, ktere MUSI zaznit v odrazkach textu.
+
+    Vraci (zbytek_argumentu, [body]). Kdyz klicove slovo chybi, vraci (argumenty, []).
+    """
+    import re as _re
+    text = str(arguments or "")
+    m = _re.search(r"nejd[ůu]le[žz]it[ěe]j[šs][ií]\s*:", text, _re.IGNORECASE)
+    if not m:
+        return text.strip(), []
+    base = text[:m.start()].strip().rstrip(".;,")
+    tail = text[m.end():].strip()
+    points = [p.strip(" .;\n\t") for p in tail.split(",")]
+    points = [p for p in points if len(p) > 2]
+    return base, points
+
+
+def parse_size_spec(text):
+    """
+    Rozparsuje zapis 'velikost - hodnota' po radcich:
+        '65E - 12\n70D - 12\n...'  ->  {'12': ['65E','70D'], ...}
+    """
+    import re as _re
+    result = {}
+    for line in str(text or "").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        m = _re.match(r"^([0-9]{2,3}[A-Za-z]{0,2})\s*[-–]\s*(.+)$", line)
+        if not m:
+            continue
+        size, value = m.group(1).strip(), m.group(2).strip()
+        result.setdefault(value, []).append(size)
+    return result
+
+
+def summarize_strap_width(text):
+    """Sirka raminek -> jedna veta pro zakaznici, nebo "" kdyz data chybi."""
+    spec = parse_size_spec(text)
+    if not spec:
+        return ""
+    import re as _re
+    nums = []
+    for v in spec:
+        m = _re.search(r"(\d+(?:[.,]\d+)?)", v)
+        if m:
+            nums.append(float(m.group(1).replace(",", ".")))
+    if not nums:
+        return ""
+    lo, hi = min(nums), max(nums)
+    fmt = lambda x: str(int(x)) if float(x).is_integer() else str(x).replace(".", ",")
+    if lo == hi:
+        return f"Šířka ramínek {fmt(lo)} mm."
+    return (f"Šířka ramínek {fmt(lo)}–{fmt(hi)} mm podle velikosti – "
+            f"u větších velikostí jsou ramínka širší, aby lépe rozložila váhu poprsí.")
+
+
+def summarize_closure(text):
+    """Zapinani (pocet hacku + sirka) -> jedna veta pro zakaznici."""
+    spec = parse_size_spec(text)
+    if not spec:
+        return ""
+    import re as _re
+    variants = []
+    for value, sizes in spec.items():
+        cm = _re.search(r"(\d+(?:[.,]\d+)?)\s*cm", value)
+        hooks = _re.search(r"H\s*\+\s*O\s*/?\s*0?(\d)", value, _re.IGNORECASE)
+        variants.append({
+            "cm": cm.group(1).replace(".", ",") if cm else "",
+            "hooks": hooks.group(1) if hooks else "",
+            "narrow": "úzk" in value.lower(),
+            "sizes": sizes,
+            "count": len(sizes),
+        })
+    if not variants:
+        return ""
+    variants.sort(key=lambda v: float((v["cm"] or "0").replace(",", ".")))
+
+    def popis(v):
+        parts = []
+        if v["hooks"]:
+            h = int(v["hooks"])
+            slovo = "řada" if h == 1 else ("řady" if h < 5 else "řad")
+            parts.append(f"{h} {slovo} háčků")
+        if v["cm"]:
+            parts.append(f"šířka {v['cm']} cm")
+        txt = ", ".join(parts) if parts else "zapínání"
+        return ("úzké " + txt) if v["narrow"] else txt
+
+    if len(variants) == 1:
+        return f"Zapínání vzadu: {popis(variants[0])}."
+    prvni, posledni = variants[0], variants[-1]
+    return (f"Zapínání vzadu podle velikosti: {popis(prvni)} u menších velikostí "
+            f"(např. {', '.join(prvni['sizes'][:3])}), "
+            f"{popis(posledni)} u větších (např. {', '.join(posledni['sizes'][:3])}).")
+
+
 def detect_product_type(code, arguments="", product_name="", category=""):
     """
     Urci typ produktu z podkladu. Vraci (typ, kategorie), kde kategorie je
@@ -195,7 +296,7 @@ def detect_cut_properties(code, title, description):
         benefits = [
             "T-šev zajistí přirozeně kulatý tvar prsou a drží váhu prsou.",
             "Vhodná pro každodenní nošení.",
-            "Švy jsou rozešité – příjemné na těle.",
+            "Měkké švy příjemné na těle.",
             "Spodní šev – zvedá prsa nahoru do přirozeného kulatého tvaru.",
             "Potažená ramínka – nezařezávají se.",
             "Podprsenka je velmi měkká, pod tričkem téměř neviditelná.",
