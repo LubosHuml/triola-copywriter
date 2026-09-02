@@ -422,10 +422,27 @@ def generate_with_openai(api_key, model, system_prompt, user_prompt):
     )
     return response.choices[0].message.content
 
+# Modely, ktere parametr temperature nepodporuji. Novejsi verze knihovny anthropic
+# ho uz nemaji ani v signature - misto HTTP chyby vyhodi TypeError
+# ("Messages.create() got an unexpected keyword argument 'temperature'").
+NO_TEMPERATURE_PREFIXES = (
+    "claude-opus-5", "claude-sonnet-5", "claude-fable-5", "claude-haiku-5",
+    "claude-opus-4-6", "claude-opus-4-7", "claude-opus-4-8",
+)
+_no_temperature_cache = set()   # naucene za behu
+
+
+def _supports_temperature(model):
+    m = str(model or "")
+    if m in _no_temperature_cache:
+        return False
+    return not any(m.startswith(pfx) for pfx in NO_TEMPERATURE_PREFIXES)
+
+
 def generate_with_anthropic(api_key, model, system_prompt, user_prompt):
     """Call Anthropic API using message structure.
-    Novejsi modely (Claude Sonnet 5+) parametr temperature odmitaji (400 deprecated) -
-    v takovem pripade se volani zopakuje bez nej."""
+    Novejsi modely parametr temperature nepodporuji - u nich se rovnou neposila.
+    Kdyby ho odmitl i jiny model, volani se zopakuje bez nej a model se zapamatuje."""
     import anthropic  # lazy - setri ~40 MB RAM pri startu
     client = anthropic.Anthropic(api_key=api_key)
     kwargs = dict(
@@ -434,15 +451,20 @@ def generate_with_anthropic(api_key, model, system_prompt, user_prompt):
         system=system_prompt,
         messages=[{"role": "user", "content": user_prompt}],
     )
-    try:
-        message = client.messages.create(temperature=0.7, **kwargs)
-    except Exception as e:
-        msg = str(e).lower()
-        if "temperature" in msg and ("deprecated" in msg or "unsupported" in msg or "invalid" in msg):
-            logging.info(f"Model '{model}' nepodporuje temperature - opakuji bez parametru.")
-            message = client.messages.create(**kwargs)
-        else:
-            raise
+    if not _supports_temperature(model):
+        message = client.messages.create(**kwargs)
+    else:
+        try:
+            message = client.messages.create(temperature=0.7, **kwargs)
+        except (TypeError, Exception) as e:
+            msg = str(e).lower()
+            if "temperature" in msg:
+                logging.info(f"Model '{model}' nepodporuje temperature - "
+                             f"opakuji bez parametru a příště ho už neposílám.")
+                _no_temperature_cache.add(str(model))
+                message = client.messages.create(**kwargs)
+            else:
+                raise
     # Novejsi modely mohou vracet ThinkingBlock pred textem - vezmi vsechny textove bloky
     text_parts = [b.text for b in message.content if getattr(b, "type", "") == "text" and hasattr(b, "text")]
     if not text_parts:

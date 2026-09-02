@@ -140,7 +140,14 @@ def process_sheet(sheet_name, model_key, tone_key, limit, dry_run, sleep_s=1.0):
                 material=row["material"], size=row["size"],
                 category=row.get("category", ""),
                 strap_width=row.get("strap_width", ""), closure=row.get("closure", ""))
-            results = generate_batch_row_data(info, model_key, tone_key)
+            try:
+                results = generate_batch_row_data(info, model_key, tone_key)
+            except Exception as first_err:
+                # Nezustavat viset na jednom modelu - zkusit zalozni
+                fallback = "claude-sonnet-5" if model_key != "claude-sonnet-5" else "claude-sonnet-4-6"
+                logging.warning(f"  {label}: model '{model_key}' selhal ({str(first_err)[:120]}) "
+                                f"- zkouším záložní '{fallback}'")
+                results = generate_batch_row_data(info, fallback, tone_key)
             written = ss.write_row_results(
                 sheet_name, row["row_num"], results, columns,
                 only_fill_empty=True, existing_row=rv)
