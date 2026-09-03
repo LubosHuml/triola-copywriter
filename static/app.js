@@ -139,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
             catalog: 'Knihovna modelů Triola',
             sheets: 'Google Sheets — hlavní tabulka Triola',
             automation: 'Automatika — denní doplňování textů',
+            emailing: 'Emailing — zadání a náhledy rozesílek',
             batch: 'Hromadné generování z Excelu',
             seo: 'Prediktivně kalibrované SEO snippety',
             brandbook: 'Triola Brand Book & Stylistika',
@@ -2023,4 +2024,102 @@ document.addEventListener('DOMContentLoaded', () => {
 
     refreshBtn.addEventListener('click', loadStatus);
     loadStatus();
+})();
+
+
+// ==================== EMAILING ====================
+(function initEmailing() {
+    const sel = document.getElementById('mail-campaign');
+    const detail = document.getElementById('mail-campaign-detail');
+    const genBtn = document.getElementById('mail-generate');
+    const status = document.getElementById('mail-status');
+    const result = document.getElementById('mail-result');
+    const output = document.getElementById('mail-output');
+    const exportBtn = document.getElementById('mail-export');
+    const filesBox = document.getElementById('mail-files');
+    if (!sel || !genBtn) return;
+
+    let campaigns = [], current = null, texts = { brief: '', cz: '', sk: '' }, sub = 'brief';
+
+    async function loadCampaigns() {
+        try {
+            const r = await fetch('/api/emailing/campaigns');
+            const d = await r.json();
+            if (!d.success) { sel.innerHTML = `<option>Chyba: ${d.error}</option>`; return; }
+            campaigns = d.campaigns;
+            sel.innerHTML = '<option value="">— vyber kampaň —</option>' + campaigns.map((c, i) =>
+                `<option value="${i}">${c.datum || '(bez data)'} — ${c.tema}</option>`).join('');
+        } catch (e) { sel.innerHTML = `<option>Chyba spojení</option>`; }
+    }
+
+    sel.addEventListener('change', () => {
+        current = campaigns[sel.value] || null;
+        if (!current) { detail.style.display = 'none'; return; }
+        detail.style.display = 'block';
+        const row = (l, v) => v ? `<div><strong>${l}:</strong> ${v}</div>` : '';
+        detail.innerHTML = row('Datum', `${current.datum} ${current.den || ''}`)
+            + row('Segmentace', current.segmentace)
+            + row('Produkty', current.produkty)
+            + row('Zadání od marketingu', current.zadani_grafika)
+            + row('Specifikace', current.specifikace)
+            + row('Komentář', current.komentar);
+    });
+
+    function renderSub() {
+        output.value = texts[sub] || '';
+        document.querySelectorAll('.mail-sub').forEach(b =>
+            b.classList.toggle('active', b.dataset.sub === sub));
+    }
+    document.querySelectorAll('.mail-sub').forEach(b => b.addEventListener('click', () => {
+        texts[sub] = output.value;      // uchovej ruční úpravy
+        sub = b.dataset.sub;
+        renderSub();
+    }));
+
+    genBtn.addEventListener('click', async () => {
+        if (!current) { alert('Nejprve vyber kampaň z plánu.'); return; }
+        genBtn.disabled = true;
+        status.textContent = 'Připravuji zadání a náhledy… (Opus 5, obvykle 2–3 minuty)';
+        filesBox.innerHTML = '';
+        try {
+            const r = await fetch('/api/emailing/generate', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ campaign: current, model_key: document.getElementById('mail-model').value })
+            });
+            const d = await r.json();
+            if (!d.success) { status.textContent = 'Chyba: ' + d.error; return; }
+            texts = { brief: d.brief, cz: d.preview_cz, sk: d.preview_sk };
+            sub = 'brief'; renderSub();
+            result.style.display = 'block';
+            let msg = `Hotovo. Produktů dohledáno ve feedu: ${d.products_found}.`;
+            if (d.products_missing && d.products_missing.length)
+                msg += ` Nenalezeno (doplní grafik): ${d.products_missing.join(', ')}`;
+            status.textContent = msg;
+        } catch (e) {
+            status.textContent = 'Chyba spojení: ' + e.message;
+        } finally {
+            genBtn.disabled = false;
+            if (window.lucide) lucide.createIcons();
+        }
+    });
+
+    exportBtn.addEventListener('click', async () => {
+        texts[sub] = output.value;
+        exportBtn.disabled = true;
+        try {
+            const r = await fetch('/api/emailing/export', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ campaign: current, brief: texts.brief,
+                                       preview_cz: texts.cz, preview_sk: texts.sk })
+            });
+            const d = await r.json();
+            if (!d.success) { filesBox.innerHTML = `<span style="color:#ef4444;">Chyba: ${d.error}</span>`; return; }
+            filesBox.innerHTML = '<strong>Uloženo:</strong> ' + Object.entries(d.files).map(([k, f]) =>
+                `<a href="/api/emailing/download/${encodeURIComponent(f)}" style="margin-right:14px;">${f}</a>`).join('');
+        } catch (e) {
+            filesBox.innerHTML = `<span style="color:#ef4444;">Chyba: ${e.message}</span>`;
+        } finally { exportBtn.disabled = false; }
+    });
+
+    loadCampaigns();
 })();

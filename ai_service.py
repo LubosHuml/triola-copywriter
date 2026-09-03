@@ -1055,3 +1055,161 @@ Odpověz VÝHRADNĚ ve formátu JSON s touto strukturou:
         logging.error(f"Chyba při hromadném generování přes LLM pro model {prod_code}: {e}")
         raise e
 
+
+
+# ==================== EMAILING ====================
+
+EMAILING_SYSTEM_PROMPT = """Jsi zkušená e-mail marketingová specialistka české značky spodního prádla Triola.cz.
+Připravuješ ZADÁNÍ PRO EMAILING pro grafika a copywritera a náhledy rozesílek — přesně v tom
+formátu, na jaký je tým zvyklý.
+
+Platí pro tebe VŠECHNA pravidla brandbooku Triola (tón, body positivity, zákaz klišé
+a vycpávkových frází, správná terminologie střihů, žádné vymýšlení vlastností produktů).
+
+TÓN E-MAILŮ TRIOLA:
+- Přátelský, konkrétní, lidský. Mluvíš k ženě, ne k databázi.
+- Předmět je krátký a konkrétní, klidně s jedním emoji na konci. Vytváří důvod otevřít teď.
+- Preheader doplňuje předmět, neopakuje ho.
+- Úvodní text 2–4 krátké odstavce: proč právě teď, co je nového, co z toho zákaznice má.
+- CTA je v první osobě zákaznice: „Chci vidět novinky", „Chci plavky v akční nabídce".
+- Nikdy nepiš ceny ani slevy, které nemáš v podkladech.
+
+ABSOLUTNÍ ZÁKAZ VYMÝŠLENÍ:
+Pracuješ jen s tím, co je v zadání a v produktových datech. Když něco chybí (cena, název,
+odkaz), napiš na to místo „—" nebo „(doplní grafik)". Nikdy si nedomýšlej produkty ani čísla.
+"""
+
+BRIEF_TEMPLATE_EXAMPLE = """VZOR STRUKTURY ZADÁNÍ (dodrž ji přesně, včetně pořadí a odrážek):
+
+## CZ
+Název e-mailu: DD-MM-RRRR_1NL: <segment> - <TÉMA>
+- Předmět: <text, může končit emoji>
+- Preheader: <text>
+
+Zadání pro banner: <co má být na banneru, atmosféra, zda uvést výši slevy>
+Headline do banneru: <text>
+
+Copy úvodní text: ANO
+<2-4 odstavce úvodního textu>
+
+CTA: <text tlačítka>
+
+Produkty: <jak rozvrhnout produkty do bloků — kolik jich je, co vedle sebe, co pod sebe>
+Headline: <text nebo NE>
+
+### <KÓD PRODUKTU>
+- Obrázek:
+- Název: <název z feedu, nebo prázdné když se doplní>
+- Popis: <text TIPu stylistky, nebo NE>
+- Cena: ANO
+- CTA: <text>
+
+CTA POD PRODUKTY: <text>
+Perso produkty: ANO / NE
+
+Spodní část:
+- Banner <název akce> - ANO
+- Všechny nadcházející Styling Days - ANO
+
+## SK
+<úplně stejná struktura, ale slovensky — předmět, preheader, úvodní text, CTA a TIPy
+přelož do přirozené spisovné slovenčiny; kódy produktů a technická pole ponech shodné>
+"""
+
+
+def generate_emailing_brief(campaign, products, model_key="claude-opus-5"):
+    """Vytvoří zadání pro emailing (CZ + SK) podle plánu kampaně a produktových dat."""
+    prod_lines = []
+    for i, group in enumerate(products, 1):
+        codes = " + ".join(p["kod"] for p in group)
+        detail = []
+        for p in group:
+            if p["nalezen"]:
+                cena = f"{p['cena']}" + (f" (akce {p['akcni_cena']})" if p.get("akcni_cena") else "")
+                detail.append(f"{p['kod']}: {p['nazev']} | {cena} | střih {p['strih']} | {p['odkaz']}")
+            else:
+                detail.append(f"{p['kod']}: (není ve feedu — název a cenu doplní grafik)")
+        prod_lines.append(f"Blok {i}: {codes}\n     " + "\n     ".join(detail))
+    produkty_txt = "\n".join(prod_lines) if prod_lines else "Nejsou zadány konkrétní produkty."
+
+    user_prompt = f"""{BRIEF_TEMPLATE_EXAMPLE}
+
+PODKLADY KE KAMPANI:
+Datum odeslání: {campaign.get('datum','')} ({campaign.get('den','')})
+Téma: {campaign.get('tema','')}
+Segmentace: {campaign.get('segmentace') or 'všichni CZ SK'}
+Zadání od marketingu pro grafika/copy: {campaign.get('zadani_grafika') or '—'}
+Specifikace produktu: {campaign.get('specifikace') or '—'}
+Interní poznámky a komentáře: {campaign.get('komentar') or '—'}
+Interní odkazy: {campaign.get('linky') or '—'}
+
+PRODUKTY (z produktového feedu — ceny a názvy ber odsud, nic nedomýšlej):
+{produkty_txt}
+
+ÚKOL:
+Vytvoř kompletní zadání pro emailing ve VZOROVÉ STRUKTUŘE výše, sekce CZ i SK.
+Rozvrh produktů navrhni sama podle jejich počtu a typu (sety vedle sebe, sólo kusy pod ně).
+U produktů, kde dává smysl TIP stylistky, ho napiš; jinde uveď „Popis: NE".
+Vrať POUZE text zadání, žádný úvod ani komentář."""
+
+    return _call_model(model_key, EMAILING_SYSTEM_PROMPT, user_prompt)
+
+
+def generate_emailing_preview(brief_text, lang="cz", model_key="claude-opus-5"):
+    """Z hotového zadání sestaví textový náhled rozesílky (co uvidí zákaznice)."""
+    jazyk = "češtině" if lang == "cz" else "slovenčině"
+    sekce = "CZ" if lang == "cz" else "SK"
+    user_prompt = f"""Níže je zadání pro emailing. Sestav z něj TEXTOVÝ NÁHLED e-mailu
+v {jazyk} — tak, jak ho uvidí zákaznice v schránce, ale bez obrázků.
+
+Použij VÝHRADNĚ sekci {sekce} zadání. Nic nepřidávej ani nevymýšlej.
+
+Formát náhledu:
+# PŘEDMĚT: <předmět>
+Preheader: <preheader>
+---
+## BANNER
+<headline do banneru>
+---
+## ÚVODNÍ TEXT
+<odstavce úvodního textu>
+
+[ <text CTA tlačítka> ]
+---
+## PRODUKTY
+### <název produktu nebo kód> — <cena>
+<TIP stylistky, pokud v zadání je>
+[ <CTA> ]
+(opakuj pro každý produkt)
+
+[ <CTA pod produkty> ]
+---
+## SPODNÍ ČÁST
+<výpis prvků ze spodní části zadání>
+
+ZADÁNÍ:
+{brief_text}"""
+    return _call_model(model_key, EMAILING_SYSTEM_PROMPT, user_prompt)
+
+
+def _call_model(model_key, system_prompt, user_prompt):
+    """Zavolá vybraný model se stejnou logikou jako zbytek aplikace."""
+    model_name = MODEL_MAPPING.get(model_key, model_key)
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+    openai_key = os.getenv("OPENAI_API_KEY")
+    google_key = os.getenv("GOOGLE_API_KEY")
+
+    if model_key.startswith("claude"):
+        if not anthropic_key:
+            raise ValueError("Chybí ANTHROPIC_API_KEY.")
+        return execute_with_retry(generate_with_anthropic_fallback, anthropic_key,
+                                  model_name, system_prompt, user_prompt)
+    if model_key.startswith("gpt"):
+        if not openai_key:
+            raise ValueError("Chybí OPENAI_API_KEY.")
+        return execute_with_retry(generate_with_openai, openai_key, model_name,
+                                  system_prompt, user_prompt)
+    if not google_key:
+        raise ValueError("Chybí GOOGLE_API_KEY.")
+    return execute_with_retry(generate_with_gemini, google_key, model_name,
+                              system_prompt, user_prompt)

@@ -822,6 +822,83 @@ def health_memory():
     return jsonify(data)
 
 
+
+# ==================== EMAILING ====================
+
+@app.route('/api/emailing/campaigns', methods=['GET'])
+def emailing_campaigns():
+    """Plánované e-maily z listu Emailing v retail plánu."""
+    try:
+        import emailing_service as es
+        only_future = request.args.get('future') in ('1', 'true')
+        camps = es.load_campaigns(limit=80, only_future=only_future)
+        return jsonify({"success": True, "campaigns": camps, "count": len(camps)})
+    except Exception as e:
+        logging.error(f"Chyba při načítání plánu emailingu: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/emailing/generate', methods=['POST'])
+def emailing_generate():
+    """Vytvoří zadání pro emailing + náhledy rozesílek CZ a SK."""
+    data = request.json or {}
+    campaign = data.get('campaign') or {}
+    model_key = data.get('model_key', 'claude-opus-5')
+    if not campaign.get('tema'):
+        return jsonify({"success": False, "error": "Chybí kampaň."}), 400
+    try:
+        import emailing_service as es
+        from ai_service import generate_emailing_brief, generate_emailing_preview
+
+        groups = es.parse_product_codes(campaign.get('produkty', ''))
+        products = es.lookup_products(groups, PRODUCTS_DB)
+        nenalezene = [p["kod"] for g in products for p in g if not p["nalezen"]]
+
+        brief = generate_emailing_brief(campaign, products, model_key)
+        preview_cz = generate_emailing_preview(brief, "cz", model_key)
+        preview_sk = generate_emailing_preview(brief, "sk", model_key)
+
+        return jsonify({
+            "success": True,
+            "brief": brief,
+            "preview_cz": preview_cz,
+            "preview_sk": preview_sk,
+            "products_found": sum(1 for g in products for p in g if p["nalezen"]),
+            "products_missing": nenalezene,
+        })
+    except Exception as e:
+        logging.error(f"Chyba při generování emailingu: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/emailing/export', methods=['POST'])
+def emailing_export():
+    """Uloží tři PDF (zadání + náhledy CZ/SK) a vrátí odkazy ke stažení."""
+    data = request.json or {}
+    try:
+        import emailing_service as es
+        paths = es.export_all(
+            data.get('campaign') or {},
+            data.get('brief', ''),
+            data.get('preview_cz', ''),
+            data.get('preview_sk', ''))
+        return jsonify({"success": True,
+                        "files": {k: os.path.basename(v) for k, v in paths.items()},
+                        "folder": es.OUTPUT_DIR})
+    except Exception as e:
+        logging.error(f"Chyba při exportu emailingu: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/emailing/download/<path:filename>', methods=['GET'])
+def emailing_download(filename):
+    """Stažení vygenerovaného PDF."""
+    from flask import send_from_directory
+    import emailing_service as es
+    from werkzeug.utils import secure_filename
+    return send_from_directory(es.OUTPUT_DIR, secure_filename(filename), as_attachment=True)
+
+
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
     logging.info(f"Spouštění serveru Triola Copywriting AI na portu {port}...")

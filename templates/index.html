@@ -44,6 +44,10 @@
                     <i data-lucide="bot"></i>
                     <span>Automatika</span>
                 </button>
+                <button class="nav-item" data-tab="emailing">
+                    <i data-lucide="mail"></i>
+                    <span>Emailing</span>
+                </button>
                 <button class="nav-item" data-tab="seo">
                     <i data-lucide="search"></i>
                     <span>SEO Snippety</span>
@@ -550,6 +554,61 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Tab: Emailing -->
+            <section id="tab-emailing" class="tab-pane">
+                <div class="panel">
+                    <h2>1. Vyber kampaň z plánu</h2>
+                    <p style="color:var(--text-muted); font-size:14px; margin-bottom:14px;">
+                        Témata se načítají z listu <strong>Emailing</strong> v tabulce Triola_CZ_retail plan.
+                        Aplikace k nim dohledá produkty ve feedu a připraví zadání i náhledy rozesílek.
+                    </p>
+                    <div class="form-row" style="align-items:flex-end; gap:12px; flex-wrap:wrap;">
+                        <div class="form-group" style="flex:2; min-width:320px;">
+                            <label for="mail-campaign">Kampaň (datum – téma)</label>
+                            <select id="mail-campaign"><option value="">Načítám plán…</option></select>
+                        </div>
+                        <div class="form-group" style="min-width:200px;">
+                            <label for="mail-model">Model AI</label>
+                            <select id="mail-model">
+                                <option value="claude-opus-5" selected>Claude Opus 5 (Doporučeno)</option>
+                                <option value="claude-sonnet-5">Claude Sonnet 5 (rychlejší)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="min-width:170px;">
+                            <button type="button" class="btn primary-btn" id="mail-generate" style="width:100%;">
+                                <i data-lucide="sparkles"></i><span>Připravit emailing</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="mail-campaign-detail" style="display:none; margin-top:14px; padding:12px 14px;
+                         background:var(--bg-light); border:1px solid var(--border-color); border-radius:6px; font-size:13px; line-height:1.7;"></div>
+                    <div id="mail-status" style="margin-top:12px; font-weight:600;"></div>
+                </div>
+
+                <div class="panel" id="mail-result" style="display:none; margin-top:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <h2 style="margin:0;">2. Výstupy</h2>
+                        <button type="button" class="btn secondary-btn" id="mail-export">
+                            <i data-lucide="download"></i><span>Uložit 3 PDF</span>
+                        </button>
+                    </div>
+                    <div id="mail-files" style="margin:10px 0; font-size:13px;"></div>
+
+                    <div class="tabs-inline" style="display:flex; gap:8px; margin:14px 0;">
+                        <button class="btn secondary-btn mail-sub active" data-sub="brief">Zadání pro emailing</button>
+                        <button class="btn secondary-btn mail-sub" data-sub="cz">Náhled CZ</button>
+                        <button class="btn secondary-btn mail-sub" data-sub="sk">Náhled SK</button>
+                    </div>
+                    <textarea id="mail-output" style="width:100%; min-height:460px; font-family:Consolas,monospace;
+                              font-size:12.5px; line-height:1.6; padding:14px; border:1px solid var(--border-color);
+                              border-radius:6px; resize:vertical;"></textarea>
+                    <p style="color:var(--text-muted); font-size:12px; margin-top:8px;">
+                        Text můžete rovnou upravit — do PDF se uloží to, co je zde.
+                    </p>
+                </div>
+            </section>
+
 
 
 
