@@ -105,15 +105,40 @@ def load_campaigns(limit=60, only_future=False):
     return (s_dated + s_undated)[:limit]
 
 
-def _parse_date(text):
-    """'17.03.2026' / '17. 3. 2026' -> date, jinak None."""
-    m = re.search(r"(\d{1,2})\s*\.\s*(\d{1,2})\s*\.\s*(\d{4})", str(text or ""))
+def _parse_date(text, today=None):
+    """
+    Rozpozna datum z planu. Zvlada:
+      '17.03.2026', '17. 3. 2026'  -> presne datum
+      '3.9.', '27.9', '8. 9.'      -> den a mesic bez roku (kolegyne to tak pisou)
+    U zapisu bez roku doplni aktualni rok; kdyby takove datum vyslo vic nez pul roku
+    do minulosti, bere se rok nasledujici (osetri prelom roku).
+    """
+    txt = str(text or "").strip()
+    if not txt:
+        return None
+    today = today or datetime.date.today()
+
+    m = re.search(r"(?<!\d)(\d{1,2})\s*\.\s*(\d{1,2})\s*\.\s*(\d{4})(?!\d)", txt)
+    if m:
+        try:
+            return datetime.date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
+        except ValueError:
+            return None
+
+    m = re.search(r"(?<!\d)(\d{1,2})\s*\.\s*(\d{1,2})\s*\.?(?!\s*\d)", txt)
     if not m:
         return None
-    try:
-        return datetime.date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
-    except ValueError:
+    day, month = int(m.group(1)), int(m.group(2))
+    if not (1 <= day <= 31 and 1 <= month <= 12):
         return None
+    for year in (today.year, today.year + 1):
+        try:
+            d = datetime.date(year, month, day)
+        except ValueError:
+            return None
+        if d >= today - datetime.timedelta(days=180):
+            return d
+    return None
 
 
 # ---------------------------------------------------------------- produkty
