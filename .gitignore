@@ -34,3 +34,5 @@ google_service_account.json
 high-comfort-*.json
 *-????????????.json
 emailing_vystupy/  
+google_user_token.json
+oauth_client.json

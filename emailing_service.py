@@ -419,10 +419,46 @@ def drive_parent_id():
     return os.getenv(DRIVE_PARENT_ENV) or DRIVE_PARENT_DEFAULT
 
 
+USER_TOKEN_FILE = os.path.join(BASE_DIR, "google_user_token.json")
+USER_TOKEN_ENV = "GOOGLE_USER_TOKEN_JSON"
+_user_drive = {"svc": None}
+
+
+def get_user_drive():
+    """
+    Klient Disku pod UZIVATELSKYM uctem. Sluzebni ucet nema na Disku ulozište,
+    takze soubory nahrava uzivatel (a taky je vlastni).
+    Vraci None, kdyz token neni k dispozici.
+    """
+    if _user_drive["svc"] is not None:
+        return _user_drive["svc"]
+    raw = os.getenv(USER_TOKEN_ENV)
+    if not raw and os.path.exists(USER_TOKEN_FILE):
+        raw = open(USER_TOKEN_FILE, encoding="utf-8").read()
+    if not raw:
+        return None
+    try:
+        info = json.loads(raw)
+        from google.oauth2.credentials import Credentials
+        from googleapiclient.discovery import build
+        creds = Credentials.from_authorized_user_info(info, info.get("scopes"))
+        _user_drive["svc"] = build("drive", "v3", credentials=creds, cache_discovery=False)
+        return _user_drive["svc"]
+    except Exception as e:
+        logging.warning(f"Uživatelský token pro Disk je nepoužitelný: {str(e)[:120]}")
+        return None
+
+
+def _drive():
+    """Preferuje uzivatelsky ucet, jinak sluzebni (ten umi jen zakladat slozky)."""
+    import sheets_service as ss
+    return get_user_drive() or ss.get_drive_service()
+
+
 def ensure_drive_folder(name, parent_id=None):
     """Najde nebo zalozi slozku daneho jmena. Vraci (id, url)."""
     import sheets_service as ss
-    drive = ss.get_drive_service()
+    drive = _drive()
     parent = parent_id or drive_parent_id()
     safe = name.replace("'", "\\'")
     q = (f"name = '{safe}' and mimeType = 'application/vnd.google-apps.folder' "
@@ -443,7 +479,12 @@ def upload_pdf(path, folder_id, name=None):
     """Nahraje PDF do slozky a vrati odkaz ke zhlednuti."""
     import sheets_service as ss
     from googleapiclient.http import MediaFileUpload
-    drive = ss.get_drive_service()
+    drive = get_user_drive()
+    if drive is None:
+        raise RuntimeError(
+            "Chybí přihlášení uživatele k Disku. Služební účet nemá vlastní úložiště, "
+            "takže PDF musí nahrát tvůj účet. Spusť jednou: python google_oauth_setup.py "
+            "(a token vlož na GitHub jako GOOGLE_USER_TOKEN_JSON).")
     name = name or os.path.basename(path)
 
     # stejnojmenny soubor prepsat, ne zakladat duplicity

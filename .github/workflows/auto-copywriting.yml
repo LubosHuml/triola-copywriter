@@ -65,12 +65,22 @@ jobs:
           echo "Spouštím: python auto_generate.py $ARGS"
           eval "python auto_generate.py $ARGS"
 
+      - name: Připravit podklady pro emailing
+        if: ${{ !inputs.dry_run }}
+        continue-on-error: true          # výpadek emailingu nesmí shodit copywriting
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_USER_TOKEN_JSON: ${{ secrets.GOOGLE_USER_TOKEN_JSON }}
+        run: python emailing_daily.py --limit 10
+
       - name: Uložit log jako artefakt
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: log-${{ github.run_number }}
-          path: auto_generate.log
+          path: |
+            auto_generate.log
+            emailing_daily.log
           retention-days: 30
 
       - name: Smazat přihlašovací soubor
