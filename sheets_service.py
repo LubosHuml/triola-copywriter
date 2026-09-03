@@ -25,7 +25,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CREDENTIALS_FILE = os.path.join(BASE_DIR, "google_service_account.json")
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets",
+          "https://www.googleapis.com/auth/drive"]
 
 # Hlavni tabulka Triola (nativni Google Sheet, prevedeno z .xlsx 29.7.2026)
 DEFAULT_SPREADSHEET_ID = "1al2pCplzQfo0w66rdcXhhe6Tgy8kaNtRutpv4CsTcN8"
@@ -88,6 +89,18 @@ def get_service(fresh=False):
 def reset_service():
     """Zahodi klienta - pouziva se po chybe spojeni, aby se navazalo nove."""
     _thread_local.service = None
+
+
+def get_drive_service():
+    """Klient Google Drive (vlastni pro kazde vlakno, stejne jako u Sheets)."""
+    if getattr(_thread_local, "drive", None) is not None:
+        return _thread_local.drive
+    from google.oauth2 import service_account
+    from googleapiclient.discovery import build
+    info = get_credentials_info()
+    creds = service_account.Credentials.from_service_account_info(info, scopes=SCOPES)
+    _thread_local.drive = build("drive", "v3", credentials=creds, cache_discovery=False)
+    return _thread_local.drive
 
 
 def get_service_account_email():
