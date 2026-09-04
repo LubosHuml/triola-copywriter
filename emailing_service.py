@@ -251,6 +251,17 @@ def _parse_lines(text):
     return out
 
 
+def _mc(pdf, w, h, text, **kw):
+    """
+    multi_cell s vynucenym zalomenim na novy radek.
+    fpdf2 ma ve vychozim stavu new_x=RIGHT, new_y=TOP - dalsi blok textu
+    proto zacal VPRAVO vedle predchoziho misto pod nim a utikal mimo stranku.
+    """
+    kw.setdefault("new_x", "LMARGIN")
+    kw.setdefault("new_y", "NEXT")
+    pdf.multi_cell(w, h, text, **kw)
+
+
 def _pdf_brief(campaign, text, path):
     """
     ZADÁNÍ — vypada jako interni pracovni dokument:
@@ -287,7 +298,7 @@ def _pdf_brief(campaign, text, path):
         pdf.cell(34, 6, _txt(label, font))
         pdf.set_font(font, "", 9)
         pdf.set_text_color(*INK)
-        pdf.multi_cell(W - 40, 6, _txt(val, font))
+        _mc(pdf, W - 40, 6, _txt(val, font))
     pdf.ln(6)
 
     for kind, content in _parse_lines(text):
@@ -302,33 +313,33 @@ def _pdf_brief(campaign, text, path):
             pdf.set_x(pdf.l_margin + 5)
             pdf.set_font(font, "B", 12)
             pdf.set_text_color(*BRAND)
-            pdf.multi_cell(W - 5, 7, _txt(content, font))
+            _mc(pdf, W - 5, 7, _txt(content, font))
             pdf.ln(1.5)
         elif kind == "h3":
             pdf.set_font(font, "B", 10)
             pdf.set_text_color(*INK)
             pdf.set_fill_color(244, 238, 241)
-            pdf.multi_cell(W, 6.5, _txt("  " + content, font), fill=True)
+            _mc(pdf, W, 6.5, _txt("  " + content, font), fill=True)
             pdf.ln(1)
         elif kind == "li":
             pdf.set_font(font, "", 9.5)
             pdf.set_text_color(*INK)
             pdf.set_x(pdf.l_margin + 4)
-            pdf.multi_cell(W - 4, 5.4, _txt("•  " + content, font))
+            _mc(pdf, W - 4, 5.4, _txt("•  " + content, font))
         elif kind == "cta":
             pdf.set_font(font, "B", 9.5)
             pdf.set_text_color(*BRAND)
-            pdf.multi_cell(W, 5.6, _txt("[ " + content + " ]", font))
+            _mc(pdf, W, 5.6, _txt("[ " + content + " ]", font))
         else:
             pdf.set_font(font, "", 9.5)
             pdf.set_text_color(*INK)
-            pdf.multi_cell(W, 5.4, _txt(content, font))
+            _mc(pdf, W, 5.4, _txt(content, font))
             pdf.ln(0.8)
 
     pdf.ln(5)
     pdf.set_font(font, "", 7.5)
     pdf.set_text_color(*MUTED)
-    pdf.multi_cell(W, 4, _txt("Interní podklad pro grafika a copy · vygenerovala aplikace "
+    _mc(pdf, W, 4, _txt("Interní podklad pro grafika a copy · vygenerovala aplikace "
                               f"Triola Copywriter {datetime.datetime.now():%d.%m.%Y %H:%M}", font))
     os.makedirs(os.path.dirname(path), exist_ok=True)
     pdf.output(path)
@@ -367,18 +378,18 @@ def _pdf_preview(campaign, text, lang, path):
             pdf.set_fill_color(247, 241, 244)
             pdf.set_font(font, "B", 12.5)
             pdf.set_text_color(*INK)
-            pdf.multi_cell(W, 8, _txt(content, font), fill=True)
+            _mc(pdf, W, 8, _txt(content, font), fill=True)
             pdf.ln(1)
         elif kind == "h2":                       # sekce e-mailu
             pdf.ln(2)
             pdf.set_font(font, "B", 8.5)
             pdf.set_text_color(*MUTED)
-            pdf.multi_cell(W, 5, _txt(content.upper(), font))
+            _mc(pdf, W, 5, _txt(content.upper(), font))
             pdf.ln(0.5)
         elif kind == "h3":                       # produkt
             pdf.set_font(font, "B", 10.5)
             pdf.set_text_color(*BRAND)
-            pdf.multi_cell(W, 6, _txt(content, font))
+            _mc(pdf, W, 6, _txt(content, font))
         elif kind == "cta":                      # tlacitko
             pdf.ln(1)
             y = pdf.get_y()
@@ -393,18 +404,18 @@ def _pdf_preview(campaign, text, lang, path):
         elif kind == "li":
             pdf.set_font(font, "", 10)
             pdf.set_text_color(*INK)
-            pdf.multi_cell(W, 5.6, _txt("•  " + content, font))
+            _mc(pdf, W, 5.6, _txt("•  " + content, font))
         else:
             pdf.set_font(font, "", 10)
             pdf.set_text_color(*INK)
-            pdf.multi_cell(W, 5.8, _txt(content, font))
+            _mc(pdf, W, 5.8, _txt(content, font))
             pdf.ln(1.2)
 
     pdf.ln(4)
     pdf.set_x(x0)
     pdf.set_font(font, "", 7.5)
     pdf.set_text_color(*MUTED)
-    pdf.multi_cell(W, 4, _txt("Textový náhled bez obrázků · Triola Copywriter "
+    _mc(pdf, W, 4, _txt("Textový náhled bez obrázků · Triola Copywriter "
                               f"{datetime.datetime.now():%d.%m.%Y %H:%M}", font))
     os.makedirs(os.path.dirname(path), exist_ok=True)
     pdf.output(path)

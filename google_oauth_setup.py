@@ -39,8 +39,10 @@ def main():
 
     from google_auth_oauthlib.flow import InstalledAppFlow
     flow = InstalledAppFlow.from_client_secrets_file(CLIENT_FILE, SCOPES)
-    creds = flow.run_local_server(port=0, prompt="consent",
-                                  authorization_prompt_message="Otevírám prohlížeč pro přihlášení…")
+    creds = flow.run_local_server(
+        port=0, prompt="consent", open_browser=True,
+        authorization_prompt_message="Přihlas se v prohlížeči. Kdyby se okno neotevřelo, "
+                                     "otevři tento odkaz ručně:\n{url}\n")
     data = {
         "token": creds.token,
         "refresh_token": creds.refresh_token,
