@@ -70,6 +70,12 @@ SWIM_CODE_TYPES = {
 BEACHWEAR_WORDS = ("kaftan", "pareo", "plážov", "plazov", "tunik", "šaty", "saty",
                    "sukně", "sukne", "poncho", "kimono", "overal")
 
+# Nocni pradlo - kod 61xxx je u Trioly vzdy nocni kosile (overeno na feedu: 61871, 61885).
+# Korektura 09/2026: u 61903 a 61906 se generovaly texty o podprsence - chyba.
+NIGHTWEAR_CODE_TYPES = {"61": "noční košile"}
+NIGHTWEAR_WORDS = ("noční košil", "nocni kosil", "košilka", "kosilka", "pyžam", "pyzam",
+                   "župan", "zupan", "negližé", "neglize")
+
 
 # ---------------------------------------------------------------- podklady od kolegyn
 
@@ -197,6 +203,17 @@ def detect_product_type(code, arguments="", product_name="", category=""):
             return "Plážová sukně", "plazove"
         return "Plážový doplněk", "plazove"
 
+    # 1b) Nocni pradlo. Kod 61xxx je u Trioly spolehlivy priznak nocni kosile a ma prednost
+    #     i pred sloupcem PRODUKT - jinak vznikaji texty o podprsence (korektura 09/2026).
+    #     Prefix uznavame jen u ciste ciselneho peticiferneho kodu Trioly, ne u cizich znacek.
+    je_triola_kod = len(digits) >= 5 and digits[:5].isdigit()
+    if (je_triola_kod and prefix in NIGHTWEAR_CODE_TYPES) or any(w in src for w in NIGHTWEAR_WORDS):
+        if "pyžam" in src or "pyzam" in src:
+            return "Pyžamo", "nocni"
+        if "župan" in src or "zupan" in src:
+            return "Župan", "nocni"
+        return NIGHTWEAR_CODE_TYPES.get(prefix, "Noční košile"), "nocni"
+
     # 2) Explicitni sloupec PRODUKT ma prednost
     if pname:
         base = pname
@@ -301,7 +318,7 @@ def detect_cut_properties(code, title, description):
             "Potažená ramínka – nezařezávají se.",
             "Podprsenka je velmi měkká, pod tričkem téměř neviditelná.",
             "Košíčky podšité bavlnou – ideální i pro citlivější pokožku.",
-            "Je vhodný na drobnou asymetrii prsou.",
+            "Střih T-Fit je vhodný i pro ženy s drobnou asymetrií prsou (nikdy to nepřipisuj prošití ani švu košíčku).",
             "Má zakulacené kostice vložené do měkkého tunýlku, příjemné na těle."
         ]
         recommendation = "Využijte moment, kdy zákaznice obdivuje střih – vysvětlete jí, že právě T-šev vytváří jejich přirozený kulatý tvar. Tento střih si zamiluje hned po prvním vyzkoušení. (Vždy dávejte triko s větší gramáží bambusové, Eldar)"
@@ -315,7 +332,7 @@ def detect_cut_properties(code, title, description):
                 "Bezešvé košíčky z lehké pěny s povrchem Ultrafein (ultra jemný, hladký povrch) – přizpůsobí se tvaru poprsí a vytváří hladký efekt pod oblečením.",
                 "Vyšší střed než u Top-fit – vykouzlí sexy dekolt, ale zároveň prsa fixuje a udrží na místě.",
                 "Výstřih zpracovaný pruženkou nebo paspulí, které lehce pruží a přizpůsobí se tělu. Brání tomu, aby se výstřih košíčků po nošení a praní vytáhl a vytáčel směrem ven.",
-                "Krajková ramínka – jsou pohodlná, nezařezávají se, poskytují stabilní oporu a zároveň zdobí podprsenku.",
+                "Krajková ramínka – jsou pohodlná, nezařezávají se, poskytují spolehlivou oporu a zároveň zdobí podprsenku.",
                 "Průramky a zadní díly jsou olemované proužkem a díky tomu neškrábou v podpaží – vhodné i pro citlivé zákaznice.",
                 "Pevný obvod z krajky – unese váhu prsou a drží tvar.",
                 "Univerzální střih – vhodný pro každodenní nošení i výjimečné příležitosti.",
@@ -330,7 +347,7 @@ def detect_cut_properties(code, title, description):
                 "Bezešvé košíčky z lehké pěny s povrchem Ultrafein (ultra jemný, hladký povrch) – přizpůsobí se tvaru poprsí a vytváří hladký efekt pod oblečením (dává prsa k sobě).",
                 "Nízký střed – vykouzlí sexy hluboký dekolt, ideální do výstřihů.",
                 "Výstřih zpracovaný pruženkou nebo paspulí, které lehce pruží a přizpůsobí se tělu. Brání tomu, aby se výstřih košíčků po nošení a praní vytáhl a vytáčel směrem ven.",
-                "Ramínka se nezařezávají, poskytují stabilní oporu a nenesou váhu prsou.",
+                "Ramínka se nezařezávají a poskytují pohodlnou oporu.",
                 "Pevný obvod z funkčního materiálu nebo krajky – unese váhu prsou a drží tvar.",
                 "Má zakulacené kostice vložené do měkkého tunýlku, příjemné na těle.",
                 "Otevřená kostice – vhodná také na prsa od sebe.",
@@ -361,7 +378,7 @@ def detect_cut_properties(code, title, description):
             characteristics = "Nevyztužené krajkové košíčky s kosticemi a bočním dílkem pro stabilitu. Otázka pro zákaznici: „Chcete podprsenku, která vypadá jemně, ale podrží i větší poprsí?“"
             benefits = [
                 "Nevyztužené košíčky s kosticemi – přirozený tvar, pevná opora a pohodlí.",
-                "Díky prošití je vhodná na asymetrii prsou.",
+                "Střih je vhodný i pro ženy s drobnou asymetrií prsou (nikdy to nepřipisuj prošití ani švu košíčku).",
                 "Jemná elastická krajka – podšitá funkčním úpletem a neprosvítá, vytváří elegantní efekt.",
                 "Všitý boční dílek – zabraňuje rozlití prsou do stran, pomáhá udržet kulatý tvar.",
                 "Flexi kostice – kopírují pohyb těla, netlačí a přirozeně drží tvar.",

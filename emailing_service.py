@@ -259,6 +259,14 @@ def _mc(pdf, w, h, text, **kw):
     """
     kw.setdefault("new_x", "LMARGIN")
     kw.setdefault("new_y", "NEXT")
+    # Dlouhy odkaz je jedno "slovo" - bez zalomeni po znacich by pretekl ven
+    # ze stranky. Prepneme na znakove zalomeni jen kdyz je to opravdu potreba.
+    try:
+        longest = max((pdf.get_string_width(t) for t in str(text).split()), default=0)
+        if w and longest > (w - 2):
+            kw.setdefault("wrapmode", "CHAR")
+    except Exception:
+        pass
     pdf.multi_cell(w, h, text, **kw)
 
 
