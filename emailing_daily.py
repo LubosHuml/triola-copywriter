@@ -90,10 +90,11 @@ def main():
             summary["pripraveno"] += 1
             continue
         try:
-            groups = es.parse_product_codes(c.get("produkty", ""))
-            products = es.lookup_products(groups, appmod.PRODUCTS_DB)
+            products, poznamka = es.resolve_products(c, appmod.PRODUCTS_DB)
+            if poznamka:
+                log.info("   %s", poznamka)
 
-            brief = generate_emailing_brief(c, products, args.model)
+            brief = generate_emailing_brief(c, products, args.model, poznamka)
             cz = generate_emailing_preview(brief, "cz", args.model)
             sk = generate_emailing_preview(brief, "sk", args.model)
 

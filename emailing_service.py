@@ -188,6 +188,160 @@ def lookup_products(groups, products_db):
     return out
 
 
+# Značky, které Triola prodává (pro rozpoznání z tématu kampaně)
+ZNACKY = ("Triola", "Panache", "Sloggi", "Dorina", "Esotiq", "Sassa", "Susa",
+          "Vova", "V.O.V.A.", "Babella", "Aruelle", "Eldar", "Cotonella",
+          "Jadea", "Admas", "Linclalor", "Lady Belty", "Selene", "Charme",
+          "Triumph", "Deidad", "Kalimo", "Gina", "Pleas")
+
+PLAVKY_SLOVA = ("plavk", "bikin", "tankin", "monokin", "jednodíl", "dvoudíl", "pláž")
+SLEVA_SLOVA = ("sleva", "slevy", "výprodej", "vyprodej", "akce", "akční", "zlevn",
+               "sale", "topsell", "bestsell")
+NOVINKA_SLOVA = ("novink", "noviky", "nové", "nova", "nová", "limitk", "limitovan",
+                 "kolekce", "představuje", "predstavuje")
+
+
+def _cena_cislo(text):
+    """'1399.00 CZK' nebo '1 399 Kč' -> 1399.0, jinak None."""
+    m = re.search(r"[\d\s]+[.,]?\d*", str(text or "").replace("\xa0", " "))
+    if not m:
+        return None
+    try:
+        return float(m.group(0).replace(" ", "").replace(",", "."))
+    except ValueError:
+        return None
+
+
+def products_from_topic(campaign, products_db, limit=6):
+    """
+    Když kampaň nemá vyplněné konkrétní kódy, vybere z feedu produkty odpovídající
+    tématu, aby e-mail nestál na prázdnu.
+
+    Vrací (skupiny, popis_vyberu). Produkty jsou VŽDY jen NÁVRH — u novinek to feed
+    nijak neověří, proto se do zadání píše, že je má kolegyně potvrdit.
+    """
+    tema = " ".join(str(campaign.get(k) or "") for k in
+                    ("tema", "zadani_grafika", "specifikace", "komentar")).lower()
+    if not tema.strip():
+        return [], ""
+
+    # Do rozesílky nepatří poukazy, vzorky ani jiné nezbožové položky feedu
+    NEZBOZI = ("poukaz", "voucher", "dárkov", "darkov", "taška", "taska",
+               "vzorek", "sáček", "sacek", "na praní", "na prani", "prací prostř",
+               "ramínka náhradní", "prodlužovač")
+    kandidati = [p for p in products_db.values()
+                 if not any(w in str(p.get("generic_title", "")).lower() for w in NEZBOZI)]
+    duvody = []
+
+    # 1) značka zmíněná v tématu
+    znacka = None
+    for z in ZNACKY:
+        klic = z.lower().replace(".", "")
+        if klic in tema.replace(".", ""):
+            znacka = z
+            break
+    if znacka:
+        vyber = [p for p in kandidati
+                 if znacka.lower().replace(".", "") in str(p.get("brand", "")).lower().replace(".", "")]
+        if vyber:
+            kandidati = vyber
+            duvody.append(f"značka {znacka}")
+
+    # 2) plavky vs. prádlo — plavky nabízíme JEN když je téma zmiňuje,
+    #    jinak by se do podzimní kampaně na prádlo dostaly plavkové podprsenky
+    def je_plavka(p):
+        return "plav" in (str(p.get("cut_name", "")) + str(p.get("type", "")) +
+                          str(p.get("generic_title", ""))).lower()
+
+    if any(w in tema for w in PLAVKY_SLOVA):
+        vyber = [p for p in kandidati if je_plavka(p)]
+        if vyber:
+            kandidati = vyber
+            duvody.append("plavky")
+    else:
+        vyber = [p for p in kandidati if not je_plavka(p)]
+        if vyber:
+            kandidati = vyber
+
+    # 3) sleva — tady má feed tvrdá data
+    if any(w in tema for w in SLEVA_SLOVA):
+        vyber = [p for p in kandidati if str(p.get("sale_price") or "").strip()]
+        if vyber:
+            def sleva(p):
+                zaklad = _cena_cislo(p.get("base_price"))
+                akce = _cena_cislo(p.get("sale_price"))
+                if not zaklad or not akce or akce >= zaklad:
+                    return 0.0
+                return (zaklad - akce) / zaklad
+            vyber.sort(key=sleva, reverse=True)
+            kandidati = vyber
+            duvody.append("zlevněné kusy z feedu, seřazené podle výše slevy")
+
+    if not duvody:
+        return [], ""
+
+    # novinky feed nerozpozná - řekneme to nahlas
+    if any(w in tema for w in NOVINKA_SLOVA) and "zlevněné" not in " ".join(duvody):
+        duvody.append(
+            "POZOR: feed neobsahuje datum naskladnění, novinku z něj nelze ověřit — "
+            "jde o výběr podle značky, potvrďte prosím ručně")
+
+    # jeden model jen jednou - ve feedu je každá barva samostatný záznam
+    videno, unikatni = set(), []
+    for p in kandidati:
+        nazev = str(p.get("generic_title") or "").strip()
+        if not nazev:
+            continue
+        klic = re.sub(r"\s+", " ", nazev.lower())
+        if klic in videno:
+            continue
+        videno.add(klic)
+        unikatni.append(p)
+    kandidati = unikatni[:limit]
+    if not kandidati:
+        return [], ""
+
+    skupiny = [[{
+        "kod": p.get("model_code", ""),
+        "nalezen": True,
+        "navrh": True,
+        "nazev": p.get("generic_title", ""),
+        "cena": p.get("base_price", ""),
+        "akcni_cena": p.get("sale_price", ""),
+        "odkaz": (p.get("all_links") or [""])[0],
+        "barvy": p.get("all_colors", []),
+        "strih": p.get("cut_name", ""),
+    }] for p in kandidati]
+
+    return skupiny, "; ".join(duvody)
+
+
+def resolve_products(campaign, products_db):
+    """
+    Jediné místo, kde se ke kampani dohledávají produkty. Nejdřív zkusí kódy zadané
+    kolegyní, a když je pole prázdné, vybere kandidáty z feedu podle tématu.
+
+    Vrací (produkty, poznamka_pro_zadani). Poznámka jde do zadání, aby bylo na první
+    pohled vidět, odkud produkty jsou a co je potřeba doplnit ručně.
+    """
+    groups = parse_product_codes(campaign.get("produkty", ""))
+    if groups:
+        return lookup_products(groups, products_db), ""
+
+    navrhy, duvod = products_from_topic(campaign, products_db)
+    if navrhy:
+        return navrhy, (
+            "CHYBÍ ZADANÉ PRODUKTY. V plánu kampaně není vyplněný sloupec s kódy, "
+            f"proto jsou níže NÁVRHY vybrané z produktového feedu ({duvod}). "
+            "Ber je jako pracovní podklad — kolegyně je před odesláním potvrdí nebo vymění.")
+
+    return [], (
+        "CHYBÍ ZADANÉ PRODUKTY I TÉMA, ze kterého by šly odvodit. Napiš úvodní text "
+        "postavený na značkových argumentech Trioly (velikostní rozsah, Styling Days, "
+        "vlastní střihy, česká výroba) a produktové bloky nech na grafikovi. "
+        "Do zadání napiš na začátek upozornění, že kampaň nemá podklady.")
+
+
 # ---------------------------------------------------------------- export
 
 BRAND = (142, 42, 74)          # vinova Triola

@@ -3,6 +3,8 @@ import logging
 import re
 import time
 from dotenv import load_dotenv
+
+import emailing_hlas   # hlas rozesílek naučený ze skutečně odeslaných kampaní
 # openai a google-genai se importuji az pri prvnim pouziti (lazy) - grpc stack
 # Gemini SDK sam o sobe zabira ~150 MB RAM, coz na 512MB Renderu zpusobovalo OOM.
 
@@ -1165,10 +1167,40 @@ TÓN E-MAILŮ TRIOLA:
 - Úvodní text 2–4 krátké odstavce: proč právě teď, co je nového, co z toho zákaznice má.
 - CTA je v první osobě zákaznice: „Chci vidět novinky", „Chci plavky v akční nabídce".
 - Nikdy nepiš ceny ani slevy, které nemáš v podkladech.
+""" + emailing_hlas.hlas_block() + """
+ZAKÁZANÁ VATA — tyhle věty umí napsat každý e-shop, Triola je nepoužívá:
+- „Právě jsme naskladnily nové kousky."
+- „Máte je před sebou dřív, než je uvidí kdokoliv jiný."
+- „Vybírejte podle toho, co vám sedí."
+- „Novinky doplňujeme průběžně, ale některé kousky mizí rychle."
+- „Když vás něco zaujme, nenechávejte to na později."
+- „Podívejte se, co je nového." jako celý úvodní odstavec
+Naléhavost piš jen tehdy, když je pravdivá a máš pro ni oporu v podkladech
+(limitovaná edice, konec výprodeje, poslední kusy). Vymyšlená naléhavost je zakázaná.
+
+O ČEM PSÁT, KDYŽ ZADÁNÍ NEMÁ KONKRÉTNÍ PRODUKTY:
+Nikdy nevyplňuj prostor obecnými frázemi. Opři se o to, co může říct jen Triola:
+- Košíčky až do velikosti L a rozsah velikostí, který se v běžných obchodech nesežene.
+- Styling Days — osobní změření správné velikosti a vyzkoušení střihů se stylistkou.
+- Vlastní střihy s vlastní logikou: Perfect-Fit (hladká pod oblečení), T-Fit (velká opora),
+  Top-Fit a Sensual-Fit (do výstřihu), Fixed-Fit (těžká prsa), Soft-Fit (bez kostic),
+  Comfy-Fit (plné dekolty).
+- Česká značka s vlastní výrobou a dlouhou tradicí v podprsenkách pro plnější poprsí.
+- Bra-fitting poradenství a velikostní tabulka pro ženy, kterým běžné velikosti nesedí.
+Vyber jedno téma a rozviň ho do konkrétního úvodního textu — ne výčet všeho najednou.
 
 ABSOLUTNÍ ZÁKAZ VYMÝŠLENÍ:
 Pracuješ jen s tím, co je v zadání a v produktových datech. Když něco chybí (cena, název,
 odkaz), napiš na to místo „—" nebo „(doplní grafik)". Nikdy si nedomýšlej produkty ani čísla.
+Konkrétní produkt nikdy nevymýšlej — ale téma úvodního textu vymyslet smíš a musíš,
+pokud ho zadání neurčuje. Prázdné zadání není důvod psát prázdný text.
+
+NÁZEV PRODUKTU JE SILNĚJŠÍ NEŽ ÚDAJ O STŘIHU:
+Když název produktu říká „bez kostic", „bezkosticová" nebo „nevyztužená", nesmíš u něj psát
+o kosticích, výztuze ani o pevné opoře z výztuže — a to ani tehdy, když je u produktu uvedený
+střih, který je jinak kosticový (v datech se ojediněle vyskytuje chyba). V takovém případě
+střih raději nejmenuj a piš o tom, co je z názvu jisté. Střih uváděj jen tehdy, když ho máš
+v produktových datech a neodporuje názvu.
 """
 
 BRIEF_TEMPLATE_EXAMPLE = """VZOR STRUKTURY ZADÁNÍ (dodrž ji přesně, včetně pořadí a odrážek):
@@ -1209,8 +1241,13 @@ přelož do přirozené spisovné slovenčiny; kódy produktů a technická pole
 """
 
 
-def generate_emailing_brief(campaign, products, model_key="claude-opus-5"):
-    """Vytvoří zadání pro emailing (CZ + SK) podle plánu kampaně a produktových dat."""
+def generate_emailing_brief(campaign, products, model_key="claude-opus-5", poznamka=""):
+    """
+    Vytvoří zadání pro emailing (CZ + SK) podle plánu kampaně a produktových dat.
+
+    'poznamka' popisuje, odkud produkty jsou (zadané kódy vs. návrh z feedu vs. nic) —
+    viz emailing_service.resolve_products.
+    """
     prod_lines = []
     for i, group in enumerate(products, 1):
         codes = " + ".join(p["kod"] for p in group)
@@ -1218,16 +1255,20 @@ def generate_emailing_brief(campaign, products, model_key="claude-opus-5"):
         for p in group:
             if p["nalezen"]:
                 cena = f"{p['cena']}" + (f" (akce {p['akcni_cena']})" if p.get("akcni_cena") else "")
-                detail.append(f"{p['kod']}: {p['nazev']} | {cena} | střih {p['strih']} | {p['odkaz']}")
+                znacka = " [NÁVRH Z FEEDU — potvrdit]" if p.get("navrh") else ""
+                detail.append(f"{p['kod']}: {p['nazev']} | {cena} | střih {p['strih']} | {p['odkaz']}{znacka}")
             else:
                 detail.append(f"{p['kod']}: (není ve feedu — název a cenu doplní grafik)")
         prod_lines.append(f"Blok {i}: {codes}\n     " + "\n     ".join(detail))
     produkty_txt = "\n".join(prod_lines) if prod_lines else "Nejsou zadány konkrétní produkty."
+    if poznamka:
+        produkty_txt = f"!! {poznamka}\n\n{produkty_txt}"
 
     user_prompt = f"""{BRIEF_TEMPLATE_EXAMPLE}
 
 PODKLADY KE KAMPANI:
-Datum odeslání: {campaign.get('datum','')} ({campaign.get('den','')})
+Datum odeslání: {campaign.get('datum_iso') or campaign.get('datum','')} ({campaign.get('den','')})
+   (v názvu e-mailu použij TOHLE datum včetně roku, žádný rok nedomýšlej)
 Téma: {campaign.get('tema','')}
 Segmentace: {campaign.get('segmentace') or 'všichni CZ SK'}
 Zadání od marketingu pro grafika/copy: {campaign.get('zadani_grafika') or '—'}
@@ -1242,6 +1283,15 @@ PRODUKTY (z produktového feedu — ceny a názvy ber odsud, nic nedomýšlej):
 Vytvoř kompletní zadání pro emailing ve VZOROVÉ STRUKTUŘE výše, sekce CZ i SK.
 Rozvrh produktů navrhni sama podle jejich počtu a typu (sety vedle sebe, sólo kusy pod ně).
 U produktů, kde dává smysl TIP stylistky, ho napiš; jinde uveď „Popis: NE".
+
+Když je v podkladech k produktům řádek začínající „!!", zopakuj ho jako PRVNÍ řádek
+zadání ve tvaru „⚠ CHYBĚJÍCÍ PODKLADY: <text>", aby si toho kolegyně všimla.
+Produkty označené [NÁVRH Z FEEDU — potvrdit] takto označ i v zadání u příslušného bloku.
+
+Úvodní text piš v hlase Trioly podle vzorů v systémovém pokynu — s háčkem na začátku,
+ne oznámením. I když kampaň nemá produkty, úvodní text musí být konkrétní: opři ho
+o značkové argumenty Trioly. Vata typu „podívejte se, co je nového" je nepřijatelná.
+
 Vrať POUZE text zadání, žádný úvod ani komentář."""
 
     return _call_model(model_key, EMAILING_SYSTEM_PROMPT, user_prompt)

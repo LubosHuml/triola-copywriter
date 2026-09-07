@@ -850,11 +850,10 @@ def emailing_generate():
         import emailing_service as es
         from ai_service import generate_emailing_brief, generate_emailing_preview
 
-        groups = es.parse_product_codes(campaign.get('produkty', ''))
-        products = es.lookup_products(groups, PRODUCTS_DB)
+        products, poznamka = es.resolve_products(campaign, PRODUCTS_DB)
         nenalezene = [p["kod"] for g in products for p in g if not p["nalezen"]]
 
-        brief = generate_emailing_brief(campaign, products, model_key)
+        brief = generate_emailing_brief(campaign, products, model_key, poznamka)
         preview_cz = generate_emailing_preview(brief, "cz", model_key)
         preview_sk = generate_emailing_preview(brief, "sk", model_key)
 
