@@ -870,6 +870,62 @@ def emailing_generate():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route('/api/nabor/prodejny', methods=['GET'])
+def nabor_prodejny():
+    """Našeptávač prodejen pro formulář inzerátu."""
+    import nabor_service as ns
+    return jsonify({"success": True,
+                    "prodejny": ns.PRODEJNY_NAPOVEDA,
+                    "pozice": ns.POZICE_VYCHOZI})
+
+
+@app.route('/api/nabor/generate', methods=['POST'])
+def nabor_generate():
+    """Vytvoří pracovní inzerát na portál + krátkou verzi na sociální sítě."""
+    data = request.json or {}
+    try:
+        import nabor_service as ns
+        from ai_service import generate_job_ad
+
+        text = generate_job_ad(
+            pozice=data.get('pozice', ''),
+            prodejna=data.get('prodejna', ''),
+            mzda=data.get('mzda', ''),
+            nastup=data.get('nastup', ''),
+            uvazek=data.get('uvazek', ''),
+            kontakt=data.get('kontakt', ''),
+            benefity=data.get('benefity', ''),
+            podklady=data.get('podklady', ''),
+            model_key=data.get('model_key', 'claude-opus-5'),
+        )
+
+        # rozdělení na dvě části podle oddělovače z promptu
+        oddelovac = "=== SOCIÁLNÍ SÍTĚ ==="
+        if oddelovac in text:
+            inzerat, social = text.split(oddelovac, 1)
+        else:
+            inzerat, social = text, ""
+
+        return jsonify({
+            "success": True,
+            "inzerat": inzerat.strip(),
+            "social": social.strip(),
+            "rizika": ns.zkontroluj_rizika(text),
+        })
+    except Exception as e:
+        logging.error(f"Chyba při generování inzerátu: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/nabor/kontrola', methods=['POST'])
+def nabor_kontrola():
+    """Zkontroluje ručně upravený text na rizikové formulace."""
+    data = request.json or {}
+    import nabor_service as ns
+    return jsonify({"success": True,
+                    "rizika": ns.zkontroluj_rizika(data.get('text', ''))})
+
+
 @app.route('/api/emailing/export', methods=['POST'])
 def emailing_export():
     """Uloží tři PDF (zadání + náhledy CZ/SK) a vrátí odkazy ke stažení."""

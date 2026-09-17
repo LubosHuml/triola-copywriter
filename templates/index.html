@@ -48,6 +48,10 @@
                     <i data-lucide="mail"></i>
                     <span>Emailing</span>
                 </button>
+                <button class="nav-item" data-tab="nabor">
+                    <i data-lucide="user-plus"></i>
+                    <span>Nábor</span>
+                </button>
                 <button class="nav-item" data-tab="seo">
                     <i data-lucide="search"></i>
                     <span>SEO Snippety</span>
@@ -610,6 +614,108 @@
             </section>
 
 
+
+
+            <!-- Tab: Nábor -->
+            <section id="tab-nabor" class="tab-pane">
+                <div class="panel">
+                    <h2>1. Zadání inzerátu</h2>
+                    <p style="color:var(--text-muted); font-size:14px; margin-bottom:14px;">
+                        Vyplňte, co víte. Co necháte prázdné, se v inzerátu objeví jako
+                        <em>(doplní vedení)</em> — nic se nedomýšlí.
+                    </p>
+
+                    <div class="form-row" style="gap:12px; flex-wrap:wrap;">
+                        <div class="form-group" style="flex:1; min-width:260px;">
+                            <label for="nab-pozice">Pozice</label>
+                            <input type="text" id="nab-pozice" value="Prodejní asistent/ka">
+                            <small style="color:var(--text-muted);">Obourodý tvar — jednorodý inzerát je pokutovatelný.</small>
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:260px;">
+                            <label for="nab-prodejna">Prodejna a místo</label>
+                            <input type="text" id="nab-prodejna" list="nab-prodejny-list"
+                                   placeholder="Olomouc — OC Šantovka">
+                            <datalist id="nab-prodejny-list"></datalist>
+                        </div>
+                    </div>
+
+                    <div class="form-row" style="gap:12px; flex-wrap:wrap;">
+                        <div class="form-group" style="flex:1; min-width:180px;">
+                            <label for="nab-mzda">Mzda</label>
+                            <input type="text" id="nab-mzda" placeholder="28 000 – 37 000 Kč/měsíc">
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:160px;">
+                            <label for="nab-nastup">Termín nástupu</label>
+                            <input type="text" id="nab-nastup" placeholder="1. 10. 2026 nebo dohodou">
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:150px;">
+                            <label for="nab-uvazek">Úvazek</label>
+                            <input type="text" id="nab-uvazek" placeholder="7,5 hodiny denně">
+                        </div>
+                        <div class="form-group" style="flex:1; min-width:180px;">
+                            <label for="nab-kontakt">Kontaktní osoba</label>
+                            <input type="text" id="nab-kontakt" placeholder="Lucie Kozlová">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nab-benefity">Benefity (nechte prázdné pro standardní sadu Trioly)</label>
+                        <input type="text" id="nab-benefity"
+                               placeholder="provize z prodeje, stravenky, slevy na zboží, 5 týdnů dovolené…">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nab-podklady">Podklady od vedení</label>
+                        <textarea id="nab-podklady" rows="5"
+                                  placeholder="Sem vložte cokoliv od šéfa — specifika prodejny, otevírací dobu, čím je tým zajímavý, co se od člověka čeká. Má to přednost před vším ostatním."></textarea>
+                    </div>
+
+                    <div class="form-row" style="align-items:flex-end; gap:12px; flex-wrap:wrap;">
+                        <div class="form-group" style="min-width:220px;">
+                            <label for="nab-model">Model AI</label>
+                            <select id="nab-model">
+                                <option value="claude-opus-5" selected>Claude Opus 5 (Doporučeno)</option>
+                                <option value="claude-sonnet-5">Claude Sonnet 5 (rychlejší)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="min-width:190px;">
+                            <button type="button" class="btn primary-btn" id="nab-generate" style="width:100%;">
+                                <i data-lucide="sparkles"></i><span>Vytvořit inzerát</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="nab-status" style="margin-top:12px; font-weight:600;"></div>
+                </div>
+
+                <div class="panel" id="nab-result" style="display:none; margin-top:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <h2 style="margin:0;">2. Výstupy</h2>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" class="btn secondary-btn" id="nab-check">
+                                <i data-lucide="shield-check"></i><span>Zkontrolovat text</span>
+                            </button>
+                            <button type="button" class="btn secondary-btn" id="nab-copy">
+                                <i data-lucide="copy"></i><span>Kopírovat</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="nab-rizika" style="display:none; margin:12px 0; padding:12px 14px;
+                         border-radius:6px; font-size:13px; line-height:1.7;"></div>
+
+                    <div class="tabs-inline" style="display:flex; gap:8px; margin:14px 0;">
+                        <button class="btn secondary-btn nab-sub active" data-sub="inzerat">Inzerát na portál</button>
+                        <button class="btn secondary-btn nab-sub" data-sub="social">Facebook a Instagram</button>
+                    </div>
+                    <textarea id="nab-output" style="width:100%; min-height:460px; font-family:Consolas,monospace;
+                              font-size:12.5px; line-height:1.6; padding:14px; border:1px solid var(--border-color);
+                              border-radius:6px; resize:vertical;"></textarea>
+                    <p style="color:var(--text-muted); font-size:12px; margin-top:8px;">
+                        Text můžete upravit. Tlačítkem <strong>Zkontrolovat text</strong> ověříte,
+                        že jste do něj nevrátili formulaci, za kterou inspektorát práce pokutuje.
+                    </p>
+                </div>
+            </section>
 
 
             <!-- Tab: SEO Snippety -->

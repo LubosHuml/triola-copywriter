@@ -140,6 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sheets: 'Google Sheets — hlavní tabulka Triola',
             automation: 'Automatika — denní doplňování textů',
             emailing: 'Emailing — zadání a náhledy rozesílek',
+            nabor: 'Nábor — pracovní inzeráty na prodejny',
             batch: 'Hromadné generování z Excelu',
             seo: 'Prediktivně kalibrované SEO snippety',
             brandbook: 'Triola Brand Book & Stylistika',
@@ -2122,4 +2123,135 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     loadCampaigns();
+})();
+
+
+// =====================================================================
+// NÁBOR — pracovní inzeráty
+// =====================================================================
+(function () {
+    const genBtn = document.getElementById('nab-generate');
+    const status = document.getElementById('nab-status');
+    const result = document.getElementById('nab-result');
+    const output = document.getElementById('nab-output');
+    const rizikaBox = document.getElementById('nab-rizika');
+    const checkBtn = document.getElementById('nab-check');
+    const copyBtn = document.getElementById('nab-copy');
+    const datalist = document.getElementById('nab-prodejny-list');
+    if (!genBtn || !output) return;
+
+    let texty = { inzerat: '', social: '' }, sub = 'inzerat';
+
+    const val = id => (document.getElementById(id)?.value || '').trim();
+
+    (async function nactiProdejny() {
+        try {
+            const r = await fetch('/api/nabor/prodejny');
+            const d = await r.json();
+            if (d.success && datalist) {
+                datalist.innerHTML = d.prodejny.map(p => `<option value="${p}"></option>`).join('');
+            }
+        } catch (e) { /* našeptávač není kritický */ }
+    })();
+
+    function vykresliRizika(rizika) {
+        if (!rizikaBox) return;
+        if (!rizika || !rizika.length) {
+            rizikaBox.style.display = 'block';
+            rizikaBox.style.background = '#ecfdf5';
+            rizikaBox.style.border = '1px solid #6ee7b7';
+            rizikaBox.style.color = '#065f46';
+            rizikaBox.innerHTML = '<strong>Kontrola v pořádku.</strong> Text neobsahuje '
+                + 'formulace, za které inspektorát práce pokutuje.';
+            return;
+        }
+        rizikaBox.style.display = 'block';
+        rizikaBox.style.background = '#fef2f2';
+        rizikaBox.style.border = '1px solid #fca5a5';
+        rizikaBox.style.color = '#7f1d1d';
+        rizikaBox.innerHTML = '<strong>Pozor — rizikové formulace v textu:</strong><br>'
+            + rizika.map(r => `„${r}"`).join(', ')
+            + '<br><span style="font-size:12px;">Jednorodý inzerát nebo požadavek na '
+            + 'vzhled, věk či povahu je podle antidiskriminačního zákona postižitelný. '
+            + 'Zveřejněný případ: pokuta 75 000 Kč.</span>';
+    }
+
+    function prepni(novy) {
+        texty[sub] = output.value;
+        sub = novy;
+        output.value = texty[sub] || '';
+        document.querySelectorAll('.nab-sub').forEach(b =>
+            b.classList.toggle('active', b.dataset.sub === sub));
+    }
+
+    document.querySelectorAll('.nab-sub').forEach(b =>
+        b.addEventListener('click', () => prepni(b.dataset.sub)));
+
+    genBtn.addEventListener('click', async () => {
+        const prodejna = val('nab-prodejna');
+        if (!prodejna) {
+            status.style.color = '#ef4444';
+            status.textContent = 'Vyplňte prosím prodejnu a místo.';
+            return;
+        }
+        genBtn.disabled = true;
+        status.style.color = 'var(--text-muted)';
+        status.textContent = 'Píšu inzerát… (zhruba minuta)';
+        try {
+            const r = await fetch('/api/nabor/generate', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pozice: val('nab-pozice'),
+                    prodejna: prodejna,
+                    mzda: val('nab-mzda'),
+                    nastup: val('nab-nastup'),
+                    uvazek: val('nab-uvazek'),
+                    kontakt: val('nab-kontakt'),
+                    benefity: val('nab-benefity'),
+                    podklady: val('nab-podklady'),
+                    model_key: val('nab-model') || 'claude-opus-5'
+                })
+            });
+            const d = await r.json();
+            if (!d.success) {
+                status.style.color = '#ef4444';
+                status.textContent = `Chyba: ${d.error}`;
+                return;
+            }
+            texty = { inzerat: d.inzerat || '', social: d.social || '' };
+            sub = 'inzerat';
+            output.value = texty.inzerat;
+            document.querySelectorAll('.nab-sub').forEach(b =>
+                b.classList.toggle('active', b.dataset.sub === 'inzerat'));
+            result.style.display = 'block';
+            vykresliRizika(d.rizika);
+            status.style.color = '#16a34a';
+            status.textContent = 'Hotovo.';
+            if (window.lucide) window.lucide.createIcons();
+        } catch (e) {
+            status.style.color = '#ef4444';
+            status.textContent = `Chyba spojení: ${e.message}`;
+        } finally { genBtn.disabled = false; }
+    });
+
+    checkBtn?.addEventListener('click', async () => {
+        texty[sub] = output.value;
+        try {
+            const r = await fetch('/api/nabor/kontrola', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: `${texty.inzerat}\n${texty.social}` })
+            });
+            const d = await r.json();
+            vykresliRizika(d.rizika);
+        } catch (e) { /* kontrola je pojistka, ne blokátor */ }
+    });
+
+    copyBtn?.addEventListener('click', async () => {
+        try {
+            await navigator.clipboard.writeText(output.value);
+            const puvodni = copyBtn.querySelector('span').textContent;
+            copyBtn.querySelector('span').textContent = 'Zkopírováno';
+            setTimeout(() => { copyBtn.querySelector('span').textContent = puvodni; }, 1600);
+        } catch (e) { /* schránka může být blokovaná */ }
+    });
 })();

@@ -5,6 +5,7 @@ import time
 from dotenv import load_dotenv
 
 import emailing_hlas   # hlas rozesílek naučený ze skutečně odeslaných kampaní
+import nabor_service   # znalostní báze pro pracovní inzeráty
 # openai a google-genai se importuji az pri prvnim pouziti (lazy) - grpc stack
 # Gemini SDK sam o sobe zabira ~150 MB RAM, coz na 512MB Renderu zpusobovalo OOM.
 
@@ -1334,6 +1335,79 @@ ZADÁNÍ:
     return _call_model(model_key, EMAILING_SYSTEM_PROMPT, user_prompt)
 
 
+# ===================================================================== NÁBOR
+
+NABOR_SYSTEM_PROMPT = """Jsi zkušená náborářka české značky spodního prádla Triola.
+Píšeš pracovní inzeráty na prodejní pozice — texty, na které se lidé skutečně hlásí.
+
+Platí pro tebe tón brandbooku Triola: píšeš k člověku, ne do formuláře, věcně a lidsky,
+bez klišé a vycpávek. Vykáš. Nepoužíváš vyprázdněné fráze typu „dynamický kolektiv",
+„práce s lidmi je nás baví" nebo „hledáme posilu do našeho týmu".
+""" + nabor_service.GENDER_PRAVIDLA + nabor_service.ZAMESTNAVATEL \
+    + nabor_service.BEST_PRACTICES + nabor_service.STAVAJICI_INZERAT_CHYBY + """
+ABSOLUTNÍ ZÁKAZ VYMÝŠLENÍ:
+Mzdu, termín nástupu, úvazek, benefity ani kontaktní osobu si NIKDY nedomýšlej.
+Když je nemáš v zadání, napiš na jejich místo „(doplní vedení)". Radši prázdné místo
+než vymyšlené číslo — inzerát je právně závazná nabídka.
+"""
+
+
+def generate_job_ad(pozice, prodejna, mzda="", nastup="", uvazek="", kontakt="",
+                    benefity="", podklady="", model_key="claude-opus-5"):
+    """
+    Vytvoří inzerát na pracovní portál (Prace.cz / Jobs.cz) a krátkou verzi
+    na Facebook a Instagram. Vrací jeden text se dvěma oddělenými sekcemi.
+    """
+    def nebo(hodnota, nahrada="(doplní vedení)"):
+        h = str(hodnota or "").strip()
+        return h if h else nahrada
+
+    user_prompt = f"""{nabor_service.podklady_block(podklady)}
+
+ZADÁNÍ INZERÁTU:
+Pozice: {nebo(pozice, nabor_service.POZICE_VYCHOZI)}
+Prodejna a místo: {nebo(prodejna)}
+Mzda: {nebo(mzda)}
+Termín nástupu: {nebo(nastup)}
+Úvazek: {nebo(uvazek)}
+Benefity k uvedení: {nebo(benefity, "použij standardní benefity Trioly ze znalostní báze")}
+Kontaktní osoba: {nebo(kontakt)}
+
+ÚKOL — vrať přesně tyto dvě části, oddělené řádkem „=== SOCIÁLNÍ SÍTĚ ===":
+
+ČÁST 1 — INZERÁT NA PRACOVNÍ PORTÁL (250–400 slov), v této struktuře:
+
+TITULEK: <pozice + prodejna + mzda na jednom řádku>
+
+O NÁS A O TÉ PRÁCI
+<2–3 odstavce. Začni tím, co je na práci v Triole jiné než v běžném obchodě —
+bra-fitting, měření velikosti, košíčky do L, zaškolení. Popiš skutečný den na prodejně.
+Nezačínej představováním firmy jako ve výroční zprávě.>
+
+CO BUDETE DĚLAT
+<4–6 odrážek, konkrétní činnosti>
+
+KOHO HLEDÁME
+<maximálně 4 odrážky, jen skutečně nezbytné věci, psané jako chování, ne jako povaha.
+Výslovně napiš, že zkušenost s prádlem není podmínka a že zaškolíte.>
+
+CO NABÍZÍME
+<mzda, benefity, zaškolení, zázemí — odrážky>
+
+JAK SE PŘIHLÁSIT
+<co má člověk udělat, co se stane potom a do kdy se ozvete; nabídka platí
+pro muže i ženy>
+
+ČÁST 2 — KRÁTKÁ VERZE NA FACEBOOK A INSTAGRAM (max 120 slov):
+Píšeš pro lidi, kteří Triolu už znají jako zákaznice — na to navaž, je to výhoda,
+kterou portál nemá. Text v prvním odstavci řekne, koho a kam hledáte, druhý proč
+to stojí za to, pak výzva a odkaz. Jedno emoji stačí. Na konci 3–5 hashtagů.
+
+Vrať POUZE text obou částí, žádný úvod ani komentář."""
+
+    return _call_model(model_key, NABOR_SYSTEM_PROMPT, user_prompt)
+
+
 def _call_model(model_key, system_prompt, user_prompt):
     """Zavolá vybraný model se stejnou logikou jako zbytek aplikace."""
     model_name = MODEL_MAPPING.get(model_key, model_key)
@@ -1355,3 +1429,4 @@ def _call_model(model_key, system_prompt, user_prompt):
         raise ValueError("Chybí GOOGLE_API_KEY.")
     return execute_with_retry(generate_with_gemini, google_key, model_name,
                               system_prompt, user_prompt)
+
