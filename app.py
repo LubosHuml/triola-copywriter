@@ -911,6 +911,7 @@ def nabor_generate():
             "inzerat": inzerat.strip(),
             "social": social.strip(),
             "rizika": ns.zkontroluj_rizika(text),
+            "vata": ns.zkontroluj_vatu(text),
         })
     except Exception as e:
         logging.error(f"Chyba při generování inzerátu: {e}")
@@ -922,8 +923,10 @@ def nabor_kontrola():
     """Zkontroluje ručně upravený text na rizikové formulace."""
     data = request.json or {}
     import nabor_service as ns
+    text = data.get('text', '')
     return jsonify({"success": True,
-                    "rizika": ns.zkontroluj_rizika(data.get('text', ''))})
+                    "rizika": ns.zkontroluj_rizika(text),
+                    "vata": ns.zkontroluj_vatu(text)})
 
 
 @app.route('/api/emailing/export', methods=['POST'])

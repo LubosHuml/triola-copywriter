@@ -1401,7 +1401,8 @@ pro muže i ženy>
 ČÁST 2 — KRÁTKÁ VERZE NA FACEBOOK A INSTAGRAM (max 120 slov):
 Píšeš pro lidi, kteří Triolu už znají jako zákaznice — na to navaž, je to výhoda,
 kterou portál nemá. Text v prvním odstavci řekne, koho a kam hledáte, druhý proč
-to stojí za to, pak výzva a odkaz. Jedno emoji stačí. Na konci 3–5 hashtagů.
+to stojí za to, pak výzva a odkaz. Jedno emoji stačí. Na konci 3–5 hashtagů —
+zkontroluj u nich pravopis, hashtag s překlepem vypadá jako chyba značky.
 
 Vrať POUZE text obou částí, žádný úvod ani komentář."""
 

@@ -2154,26 +2154,41 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { /* našeptávač není kritický */ }
     })();
 
-    function vykresliRizika(rizika) {
+    function vykresliRizika(rizika, vata) {
         if (!rizikaBox) return;
-        if (!rizika || !rizika.length) {
-            rizikaBox.style.display = 'block';
+        const maRizika = rizika && rizika.length;
+        const maVatu = vata && vata.length;
+        let html = '';
+
+        if (maRizika) {
+            rizikaBox.style.background = '#fef2f2';
+            rizikaBox.style.border = '1px solid #fca5a5';
+            rizikaBox.style.color = '#7f1d1d';
+            html += '<strong>Právní riziko — tyhle formulace v textu nemají být:</strong><br>'
+                + rizika.map(r => `„${r}"`).join(', ')
+                + '<br><span style="font-size:12px;">Jednorodý inzerát nebo požadavek na '
+                + 'vzhled, věk či povahu je podle antidiskriminačního zákona postižitelný. '
+                + 'Zveřejněný případ: pokuta 75 000 Kč.</span>';
+        } else if (maVatu) {
+            rizikaBox.style.background = '#fffbeb';
+            rizikaBox.style.border = '1px solid #fcd34d';
+            rizikaBox.style.color = '#78350f';
+        } else {
             rizikaBox.style.background = '#ecfdf5';
             rizikaBox.style.border = '1px solid #6ee7b7';
             rizikaBox.style.color = '#065f46';
-            rizikaBox.innerHTML = '<strong>Kontrola v pořádku.</strong> Text neobsahuje '
-                + 'formulace, za které inspektorát práce pokutuje.';
-            return;
+            html += '<strong>Kontrola v pořádku.</strong> Text neobsahuje formulace, '
+                + 'za které inspektorát práce pokutuje, ani vycpávkové fráze.';
         }
+
+        if (maVatu) {
+            if (html) html += '<hr style="border:none; border-top:1px solid rgba(0,0,0,.12); margin:10px 0;">';
+            html += '<strong>Vycpávkové fráze (nejde o zákon, jen o slabý text):</strong><br>'
+                + vata.map(v => `„${v}"`).join(', ');
+        }
+
         rizikaBox.style.display = 'block';
-        rizikaBox.style.background = '#fef2f2';
-        rizikaBox.style.border = '1px solid #fca5a5';
-        rizikaBox.style.color = '#7f1d1d';
-        rizikaBox.innerHTML = '<strong>Pozor — rizikové formulace v textu:</strong><br>'
-            + rizika.map(r => `„${r}"`).join(', ')
-            + '<br><span style="font-size:12px;">Jednorodý inzerát nebo požadavek na '
-            + 'vzhled, věk či povahu je podle antidiskriminačního zákona postižitelný. '
-            + 'Zveřejněný případ: pokuta 75 000 Kč.</span>';
+        rizikaBox.innerHTML = html;
     }
 
     function prepni(novy) {
@@ -2224,7 +2239,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.nab-sub').forEach(b =>
                 b.classList.toggle('active', b.dataset.sub === 'inzerat'));
             result.style.display = 'block';
-            vykresliRizika(d.rizika);
+            vykresliRizika(d.rizika, d.vata);
             status.style.color = '#16a34a';
             status.textContent = 'Hotovo.';
             if (window.lucide) window.lucide.createIcons();
@@ -2242,7 +2257,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ text: `${texty.inzerat}\n${texty.social}` })
             });
             const d = await r.json();
-            vykresliRizika(d.rizika);
+            vykresliRizika(d.rizika, d.vata);
         } catch (e) { /* kontrola je pojistka, ne blokátor */ }
     });
 

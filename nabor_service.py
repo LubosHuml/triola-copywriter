@@ -50,14 +50,27 @@ KDO JE TRIOLA JAKO ZAMĚSTNAVATEL (fakta, ze kterých se smí psát):
 - Na prodejnách se dělá bra-fitting: zákaznici se změří a vybere správná velikost.
   Košíčky až do velikosti L — tedy rozsah, který běžné obchody nemají.
   Tohle je jádro práce: ne „hlídat zboží", ale pomoct ženě najít prádlo, které sedí.
-- Zaměstnanci procházejí pravidelným školením na střihy a materiály. Prodejní asistentka
-  po zaškolení pozná, který střih komu sedí — je to odbornost, ne brigáda u pokladny.
+- Zaměstnanci procházejí pravidelným školením na střihy a materiály. Kdo na prodejně
+  pracuje, po zaškolení pozná, který střih komu sedí — je to odbornost, ne brigáda
+  u pokladny.
 - Styling Days: akce na prodejnách, kde se zákaznicím osobně měří velikost.
+- Kromě vlastních kolekcí Triola zastupuje i další renomované značky, takže poradenství
+  na prodejně se netýká jen vlastního zboží.
+- KARIÉRNÍ CESTA: po zaškolení a praxi se dá vyrůst na specialistu/specialistku na
+  fitting a poradenství ve spodním prádle. Tohle je silný argument — uchazeč vidí,
+  kam se může posunout, ne jen co bude dělat zítra.
+
+CO PRÁCE NA PRODEJNĚ OBNÁŠÍ KROMĚ PORADENSTVÍ (piš to, je to poctivé):
+- vybalování nových kolekcí a doplňování sortimentu,
+- zpracování zásilek z e-shopu na prodejně,
+- péče o vzhled prodejny a vystavení zboží,
+- obsluha pokladny, vratky a reklamace,
+- základní práce na PC (Word, Excel) kvůli objednávkám a skladu.
 
 BENEFITY (uváděj jen ty, které jsou v podkladech k dané prodejně):
-Provize z prodeje · bonusy a prémie · stravenky nebo příspěvek na stravování ·
-zaměstnanecké slevy na zboží · 5 týdnů dovolené · školení a vzdělávací kurzy ·
-příspěvek na pracovní oblečení
+Provize z prodeje · bonusy a prémie · stravenkový paušál nebo příspěvek na stravování ·
+zaměstnanecké slevy na produkty Triola i další zastoupené značky · 5 týdnů dovolené ·
+odborná školení a cesta ke specializaci na fitting · příspěvek na pracovní oblečení
 """
 
 # --------------------------------------------------------------- best practices
@@ -148,36 +161,118 @@ CO BYLO ŠPATNĚ NA PŘEDCHOZÍM INZERÁTU TRIOLY (neopakuj to):
 # --------------------------------------------------------------- kontrola rizik
 
 RIZIKOVE_VYRAZY = [
-    # jednorodé tvary
-    "asistentku", "asistentka", "prodavačku", "prodavačka", "kolegyni hledáme",
-    "slečnu", "paní na prodejnu",
+    # jednorodé tvary — pozice a oslovení
+    "asistentku", "asistentka", "prodavačku", "prodavačka", "kolegyni",
+    "kolegyně, které", "slečnu", "paní na prodejnu", "specialistkou", "specialistka",
+    "začátečnice", "nová kolegyně", "hledáme kolegyně",
+    # jednorodé tvary — přísudky a oslovení uchazečky
+    "máte ráda", "jste spolehlivá", "jste komunikativní a", "spolehlivá",
+    "pozitivní a", "byla byste", "pokud jste šikovná",
     # požadavky na vzhled a povahu
     "reprezentativní", "upravený zevnějšek", "upravená", "usměvavou", "usměvavá",
     "milé vystupování", "příjemné vystupování", "empatická", "pečlivá", "veselou",
-    "dravý", "akční typ", "odhodlaný",
+    "dravý", "akční typ", "odhodlaný", "vykouzlit úsměv", "pozitivní naladění",
     # věk
     "mladý kolektiv", "mladý tým", "do 35 let", "do 30 let", "čerstvý absolvent",
     "student", "mladá",
     # rodina, zdraví, původ
     "bez závazků", "fyzicky zdatný", "zdravotně způsobilý", "rodilý Čech",
-    # vágní
-    "odměna dohodou", "odpovídající ohodnocení", "mzda dle dohody",
+    # vágní mzda
+    "odměna dohodou", "odpovídající ohodnocení", "mzda dle dohody", "motivující mzdu",
+    "motivující mzda", "zajímavé finanční ohodnocení",
 ]
+
+# Vycpávkové fráze — nejsou nezákonné, ale inzerát zeslabují. Hlásí se zvlášť,
+# aby se nemíchaly s právním rizikem.
+VATA_VYRAZY = [
+    "příjemné pracovní prostředí", "podporující kolektiv", "přátelský kolektiv",
+    "přátelský tým", "dynamicky se rozvíjí", "dynamicky rozvíjíme", "neustále rosteme",
+    "výjimečný zákaznický zážitek", "práce, která má smysl", "stabilní zázemí",
+    "naším úspěchem jsou lidé", "staňte se součástí", "těšíme se na vás",
+    "milujete módu", "přidejte se k nám", "možnost profesního růstu",
+]
+
+
+# Správné obourodé dvojice. Než se kontroluje riziko, vyříznou se z textu —
+# jinak by „kolegu nebo kolegyni" spustilo planý poplach na slovo „kolegyni".
+SPRAVNE_DVOJICE = [
+    "kolegu nebo kolegyni", "kolegu či kolegyni", "kolegyni nebo kolegu",
+    "kolegu i kolegyni", "kolegyně nebo kolegy", "kolegy nebo kolegyně",
+    "specialistu nebo specialistku", "specialistu či specialistku",
+    "specialistku nebo specialistu", "specialistou nebo specialistkou",
+    "asistent/ka", "asistenta nebo asistentku", "asistentku nebo asistenta",
+    "prodavač/ka", "prodavače nebo prodavačku", "prodavačku nebo prodavače",
+    "pro muže i ženy", "muže i ženy", "ženy i muže", "pro ženy i muže",
+    "začátečníky i začátečnice", "začátečnice i začátečníky",
+]
+
+
+def _normalizuj(s):
+    """
+    Malá písmena bez diakritiky a bez zdvojených mezer.
+    Inzerát se občas píše nebo kopíruje bez háčků — kontrola to musí přežít.
+    """
+    import unicodedata
+    s = unicodedata.normalize("NFD", str(s or "").lower())
+    s = "".join(c for c in s if unicodedata.category(c) != "Mn")
+    return " ".join(s.split())
 
 
 def zkontroluj_rizika(text):
     """
-    Projde hotový inzerát a vrátí seznam nalezených rizikových formulací.
+    Projde hotový inzerát a vrátí nalezené rizikové formulace.
     Slouží jako pojistka za generátorem — kdyby prompt selhal, chyba se ukáže v UI.
+    Správné obourodé dvojice se předem odstraní, aby nehlásily planý poplach.
     """
     if not text:
         return []
-    nizky = str(text).lower()
+    cisty = _normalizuj(text)
+    for dvojice in SPRAVNE_DVOJICE:
+        cisty = cisty.replace(_normalizuj(dvojice), " ")
     nalezeno = []
     for vyraz in RIZIKOVE_VYRAZY:
-        if vyraz.lower() in nizky and vyraz not in nalezeno:
+        if _normalizuj(vyraz) in cisty and vyraz not in nalezeno:
             nalezeno.append(vyraz)
     return nalezeno
+
+
+def zkontroluj_vatu(text):
+    """Vrátí vycpávkové fráze v textu. Není to právní problém, jen slabý text."""
+    if not text:
+        return []
+    cisty = _normalizuj(text)
+    return [v for v in VATA_VYRAZY if _normalizuj(v) in cisty]
+
+
+# --------------------------------------------------------------- podklady od vedení
+
+PODKLADY_PRAVIDLA = """
+JAK PRACOVAT S PODKLADY OD VEDENÍ:
+
+Podklady bývají hrubý nástřel — často psaný narychlo nebo vygenerovaný jinou AI.
+Nejsou to hotové věty k opsání. Ber z nich FAKTA, ne formulace.
+
+BER: konkrétní činnosti a povinnosti, benefity, mzdu, úvazek, nástup, lokalitu,
+     kariérní postup, cokoliv, co se dá ověřit nebo změřit.
+
+NEBER, ani když to v podkladech je:
+- Jednorodé tvary. Podklady bývají psané jen v ženském rodě („kolegyni", „spolehlivá",
+  „začátečnice", „specialistkou", „Máte ráda"). Přepiš je do obourodého nebo neutrálního
+  tvaru. Tohle pravidlo přebíjí i výslovné přání vedení — jde o právní riziko.
+- Požadavky na povahu a náladu: „usměvavá", „pozitivní", „komunikativní", „spolehlivá",
+  „vykouzlit úsměv na tváři". Přelož je na chování, nebo vypusť.
+- Vycpávkové fráze: „příjemné pracovní prostředí", „podporující kolektiv", „přátelský
+  tým", „dynamicky se rozvíjíme", „neustále rosteme", „výjimečný zákaznický zážitek",
+  „práce, která má smysl", „stabilní zázemí úspěšné společnosti", „naším úspěchem jsou
+  lidé". Nic neříkají a v inzerátu jich je plný internet.
+- „Motivující mzda" nebo „odpovídající ohodnocení" bez čísla. Když v podkladech číslo
+  není, napiš „(doplní vedení)" — nikdy vágní opis.
+- Tvrzení, že Triola je o módě a trendech. Triola je o padnutí a pohodlí. „Milujete
+  módu" filtruje špatné lidi — hledáme někoho, koho baví pomáhat, ne sledovat trendy.
+
+SLOGANY ZNAČKY („Pomáhejte ženám cítit se krásně a sebevědomě") můžeš použít jako téma
+úvodu, ale ne jako titulek ani jako náhradu za popis práce. Uchazeč se nehlásí na slogan.
+"""
 
 
 def podklady_block(inzerat_podklady):
@@ -187,4 +282,6 @@ def podklady_block(inzerat_podklady):
         return ('PODKLADY OD VEDENÍ: žádné nejsou. Vycházej z faktů o zaměstnavateli '
                 'výše a nic si nedomýšlej — mzdu, termín nástupu ani benefity, které '
                 'nemáš v zadání, neuváděj a nahraď je poznámkou "(doplní vedení)".')
-    return f"PODKLADY OD VEDENÍ (mají přednost před vším ostatním):\n{text}"
+    return (PODKLADY_PRAVIDLA
+            + "\nPODKLADY OD VEDENÍ (fakta z nich mají přednost, formulace ne):\n"
+            + text)
