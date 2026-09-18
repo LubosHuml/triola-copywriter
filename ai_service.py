@@ -1349,6 +1349,12 @@ ABSOLUTNÍ ZÁKAZ VYMÝŠLENÍ:
 Mzdu, termín nástupu, úvazek, benefity ani kontaktní osobu si NIKDY nedomýšlej.
 Když je nemáš v zadání, napiš na jejich místo „(doplní vedení)". Radši prázdné místo
 než vymyšlené číslo — inzerát je právně závazná nabídka.
+
+FORMÁT VÝSTUPU — ŽÁDNÝ MARKDOWN:
+Text se vkládá do formuláře pracovního portálu, kde se markdown nezobrazuje.
+NIKDY nepoužívej hvězdičky (**tučné**, *kurzíva*), mřížky (# nadpis), podtržítka
+ani zpětné apostrofy. Nadpisy sekcí piš VELKÝMI PÍSMENY na samostatném řádku,
+odrážky začínej pomlčkou a mezerou („- "). Zvýraznění řeší struktura, ne značky.
 """
 
 

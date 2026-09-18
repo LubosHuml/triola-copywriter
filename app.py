@@ -906,10 +906,15 @@ def nabor_generate():
         else:
             inzerat, social = text, ""
 
+        # markdown se do portálu nevkládá — čistíme ho i kdyby ho model přidal
+        inzerat = ns.odstran_markdown(inzerat)
+        social = ns.odstran_markdown(social)
+
         return jsonify({
             "success": True,
-            "inzerat": inzerat.strip(),
-            "social": social.strip(),
+            "inzerat": inzerat,
+            "social": social,
+            "html": ns.inzerat_to_html(inzerat),
             "rizika": ns.zkontroluj_rizika(text),
             "vata": ns.zkontroluj_vatu(text),
         })
@@ -926,7 +931,8 @@ def nabor_kontrola():
     text = data.get('text', '')
     return jsonify({"success": True,
                     "rizika": ns.zkontroluj_rizika(text),
-                    "vata": ns.zkontroluj_vatu(text)})
+                    "vata": ns.zkontroluj_vatu(text),
+                    "html": ns.inzerat_to_html(data.get('inzerat', text))})
 
 
 @app.route('/api/emailing/export', methods=['POST'])

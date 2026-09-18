@@ -2138,9 +2138,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const checkBtn = document.getElementById('nab-check');
     const copyBtn = document.getElementById('nab-copy');
     const datalist = document.getElementById('nab-prodejny-list');
+    const nahled = document.getElementById('nab-nahled');
+    const nahledWrap = document.getElementById('nab-nahled-wrap');
+    const hint = document.getElementById('nab-hint');
+    const copyHtmlBtn = document.getElementById('nab-copy-html');
+    const copyRichBtn = document.getElementById('nab-copy-rich');
     if (!genBtn || !output) return;
 
-    let texty = { inzerat: '', social: '' }, sub = 'inzerat';
+    let texty = { inzerat: '', social: '' }, sub = 'inzerat', html = '';
 
     const val = id => (document.getElementById(id)?.value || '').trim();
 
@@ -2192,11 +2197,47 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function prepni(novy) {
-        texty[sub] = output.value;
+        if (sub !== 'nahled') texty[sub] = output.value;
         sub = novy;
-        output.value = texty[sub] || '';
+        const jeNahled = sub === 'nahled';
+
+        output.style.display = jeNahled ? 'none' : 'block';
+        if (nahledWrap) nahledWrap.style.display = jeNahled ? 'block' : 'none';
+        if (hint) hint.style.display = jeNahled ? 'none' : 'block';
+
+        if (jeNahled) {
+            vykresliNahled();
+        } else {
+            output.value = texty[sub] || '';
+        }
         document.querySelectorAll('.nab-sub').forEach(b =>
             b.classList.toggle('active', b.dataset.sub === sub));
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    async function vykresliNahled() {
+        if (!nahled) return;
+        try {
+            const r = await fetch('/api/nabor/kontrola', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ inzerat: texty.inzerat,
+                                       text: `${texty.inzerat}\n${texty.social}` })
+            });
+            const d = await r.json();
+            if (d.html) { html = d.html; }
+            vykresliRizika(d.rizika, d.vata);
+        } catch (e) { /* náhled se vykreslí z posledního známého HTML */ }
+        nahled.innerHTML = `<style>
+            #nab-nahled { font-family: Georgia, 'Times New Roman', serif; color:#2a1f24; line-height:1.65; }
+            #nab-nahled h2 { font-size:25px; line-height:1.3; margin:0 0 22px; color:#8e2a4a;
+                             font-weight:700; border-bottom:2px solid #e7d3da; padding-bottom:12px; }
+            #nab-nahled h3 { font-size:13px; letter-spacing:.09em; text-transform:uppercase;
+                             color:#8e2a4a; font-weight:700; margin:26px 0 10px;
+                             font-family:'Segoe UI',Arial,sans-serif; }
+            #nab-nahled p  { margin:0 0 13px; font-size:15px; }
+            #nab-nahled ul { margin:0 0 16px; padding-left:20px; }
+            #nab-nahled li { margin-bottom:7px; font-size:15px; }
+        </style>` + (html || '<p>Náhled se zobrazí po vygenerování inzerátu.</p>');
     }
 
     document.querySelectorAll('.nab-sub').forEach(b =>
@@ -2234,7 +2275,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             texty = { inzerat: d.inzerat || '', social: d.social || '' };
+            html = d.html || '';
             sub = 'inzerat';
+            output.style.display = 'block';
+            if (nahledWrap) nahledWrap.style.display = 'none';
+            if (hint) hint.style.display = 'block';
             output.value = texty.inzerat;
             document.querySelectorAll('.nab-sub').forEach(b =>
                 b.classList.toggle('active', b.dataset.sub === 'inzerat'));
@@ -2250,23 +2295,55 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     checkBtn?.addEventListener('click', async () => {
-        texty[sub] = output.value;
+        if (sub !== 'nahled') texty[sub] = output.value;
         try {
             const r = await fetch('/api/nabor/kontrola', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: `${texty.inzerat}\n${texty.social}` })
+                body: JSON.stringify({ inzerat: texty.inzerat,
+                                       text: `${texty.inzerat}\n${texty.social}` })
             });
             const d = await r.json();
+            if (d.html) html = d.html;
             vykresliRizika(d.rizika, d.vata);
+            if (sub === 'nahled') vykresliNahled();
         } catch (e) { /* kontrola je pojistka, ne blokátor */ }
     });
 
+    function potvrd(btn, hlaska) {
+        if (!btn) return;
+        const el = btn.querySelector('span');
+        const puvodni = el.textContent;
+        el.textContent = hlaska;
+        setTimeout(() => { el.textContent = puvodni; }, 1600);
+    }
+
     copyBtn?.addEventListener('click', async () => {
         try {
-            await navigator.clipboard.writeText(output.value);
-            const puvodni = copyBtn.querySelector('span').textContent;
-            copyBtn.querySelector('span').textContent = 'Zkopírováno';
-            setTimeout(() => { copyBtn.querySelector('span').textContent = puvodni; }, 1600);
+            await navigator.clipboard.writeText(sub === 'nahled' ? html : output.value);
+            potvrd(copyBtn, 'Zkopírováno');
+        } catch (e) { /* schránka může být blokovaná */ }
+    });
+
+    copyHtmlBtn?.addEventListener('click', async () => {
+        try {
+            await navigator.clipboard.writeText(html || '');
+            potvrd(copyHtmlBtn, 'Zkopírováno');
+        } catch (e) { /* schránka může být blokovaná */ }
+    });
+
+    // Kopie s formátováním — do Wordu i e-mailu se vloží nadpisy a tučnost,
+    // ne HTML značky. Když prohlížeč bohatou schránku neumí, spadne to na HTML.
+    copyRichBtn?.addEventListener('click', async () => {
+        try {
+            if (window.ClipboardItem && navigator.clipboard.write) {
+                await navigator.clipboard.write([new ClipboardItem({
+                    'text/html': new Blob([html || ''], { type: 'text/html' }),
+                    'text/plain': new Blob([texty.inzerat || ''], { type: 'text/plain' })
+                })]);
+            } else {
+                await navigator.clipboard.writeText(html || '');
+            }
+            potvrd(copyRichBtn, 'Zkopírováno');
         } catch (e) { /* schránka může být blokovaná */ }
     });
 })();

@@ -244,6 +244,84 @@ def zkontroluj_vatu(text):
     return [v for v in VATA_VYRAZY if _normalizuj(v) in cisty]
 
 
+# --------------------------------------------------------------- formát výstupu
+
+def odstran_markdown(text):
+    """
+    Vyčistí z textu markdown. Pracovní portály ho neumí zobrazit, takže **tučné**
+    by se v inzerátu ukázalo i s hvězdičkami.
+    """
+    import re
+    t = str(text or "")
+    t = re.sub(r"\*\*(.+?)\*\*", r"\1", t, flags=re.S)   # **tučné**
+    t = re.sub(r"(?<!\w)\*(?!\s)(.+?)(?<!\s)\*(?!\w)", r"\1", t, flags=re.S)  # *kurzíva*
+    t = re.sub(r"(?<!\w)__(.+?)__(?!\w)", r"\1", t, flags=re.S)
+    t = re.sub(r"`{1,3}", "", t)
+    t = re.sub(r"^\s{0,3}#{1,6}\s*", "", t, flags=re.M)  # # nadpis
+    t = re.sub(r"^\s*[\*•·]\s+", "- ", t, flags=re.M)  # odrážky na pomlčku
+    t = re.sub(r"\*", "", t)                              # zbylé osamocené hvězdičky
+    t = re.sub(r"\n{3,}", "\n\n", t)
+    return t.strip()
+
+
+def _esc(s):
+    return (str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+
+
+def inzerat_to_html(text):
+    """
+    Převede čistý text inzerátu na HTML s nadpisovou strukturou a tučností.
+    Slouží k vizuálnímu náhledu a dá se vložit i do portálů, které HTML přijímají.
+
+    Rozpoznává:
+      „TITULEK: …"            -> h2 (hlavní nadpis)
+      řádek VELKÝMI PÍSMENY   -> h3 (nadpis sekce)
+      „- text"                -> položka seznamu
+      ostatní                 -> odstavec
+    """
+    import re
+    radky = odstran_markdown(text).split("\n")
+    html, seznam = [], False
+
+    def zavri():
+        nonlocal seznam
+        if seznam:
+            html.append("</ul>")
+            seznam = False
+
+    for radek in radky:
+        r = radek.strip()
+        if not r:
+            zavri()
+            continue
+
+        if r.upper().startswith("TITULEK:"):
+            zavri()
+            html.append(f'<h2 class="nab-titulek">{_esc(r.split(":", 1)[1].strip())}</h2>')
+            continue
+
+        if r.startswith("- "):
+            if not seznam:
+                html.append("<ul>")
+                seznam = True
+            html.append(f"<li>{_esc(r[2:].strip())}</li>")
+            continue
+
+        # nadpis sekce: krátký řádek bez tečky, převážně velkými písmeny
+        pismena = [c for c in r if c.isalpha()]
+        velka = sum(1 for c in pismena if c.isupper())
+        if pismena and velka / len(pismena) > 0.7 and len(r) < 70 and not r.endswith("."):
+            zavri()
+            html.append(f"<h3>{_esc(r)}</h3>")
+            continue
+
+        zavri()
+        html.append(f"<p>{_esc(r)}</p>")
+
+    zavri()
+    return "\n".join(html)
+
+
 # --------------------------------------------------------------- podklady od vedení
 
 PODKLADY_PRAVIDLA = """
@@ -276,7 +354,7 @@ SLOGANY ZNAČKY („Pomáhejte ženám cítit se krásně a sebevědomě") můž
 
 
 def podklady_block(inzerat_podklady):
-    """Volitelné podklady od šéfa — vloží se do promptu, když jsou vyplněné."""
+    """Volitelné podklady od vedení — vloží se do promptu, když jsou vyplněné."""
     text = str(inzerat_podklady or "").strip()
     if not text:
         return ('PODKLADY OD VEDENÍ: žádné nejsou. Vycházej z faktů o zaměstnavateli '
