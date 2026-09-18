@@ -100,12 +100,68 @@ JAK PSÁT PRACOVNÍ INZERÁT (rešerše 09/2026):
 
 6. NEPIŠ POŽADAVKY NA POVAHU MÍSTO NA PRÁCI. „Veselou náladu", „příjemné vystupování"
    a „kladný vztah ke komunikaci" nic neměří a působí jako fráze. Přepiš je na
-   chování: „bavilo vás mluvit s lidmi a poradit jim i tehdy, když si nejsou jistí".
+   činnost, kterou člověk opravdu dělá:
+      místo „empatická"          -> „Vyslechnete, co zákaznice potřebuje."
+      místo „komunikativní"      -> „Baví vás práce s lidmi."
+      místo „ochotná poradit"    -> „Umíte poradit i zákaznici, která přesně neví,
+                                     co hledá."
 
 7. KONKRÉTNÍ CTA A SLIB ODPOVĚDI. Napiš, co se stane po odeslání a do kdy se ozvete.
    A pak to dodržte — každému kandidátovi se ozvěte, i když nevyšel.
 
 8. DÉLKA. Inzerát na portál 250–400 slov. Delší text lidé nedočtou.
+"""
+
+# --------------------------------------------------------------- čeština
+
+CESTINA = """
+BEZCHYBNÁ ČEŠTINA — TOHLE JE NEJDŮLEŽITĚJŠÍ PRAVIDLO CELÉHO INZERÁTU:
+
+Inzerát čtou stovky lidí a gramatická chyba v něm poškozuje značku víc než slabý
+nápad. Každou větu si po sobě přečti a ověř, že dává smysl i sama o sobě.
+
+A) ODRÁŽKY V JEDNOM SEZNAMU MUSÍ MÍT STEJNÝ MLUVNICKÝ TVAR.
+   Míchání tvarů je nejčastější chyba a je na první pohled vidět.
+
+   CO BUDETE DĚLAT — každá odrážka začíná slovesem v infinitivu:
+      - Měřit velikost a vybírat střihy, které zákaznici sedí
+      - Radit i ke značkám, které Triola zastupuje
+      - Vybalovat nové kolekce a doplňovat zboží
+      - Zpracovávat zásilky z e-shopu
+   Nikdy v tomhle seznamu nepiš „budete měřit" nebo „měření velikosti" — drž infinitiv.
+
+   KOHO HLEDÁME — každá odrážka je celá věta ve 2. osobě množného čísla
+   v přítomném čase, zakončená tečkou:
+      - Baví vás práce s lidmi a umíte poradit i zákaznici, která přesně neví,
+        co hledá.
+      - Zvládáte základní práci na počítači.
+      - Chcete se naučit měřit velikosti a rozumět střihům.
+      - Vyhovuje vám práce na prodejně na plný úvazek.
+   Nikdy nepiš minulý čas („bavilo vás"), podmiňovací způsob („bavila by vás")
+   ani holé jmenné fráze („chuť učit se novým věcem").
+
+   CO NABÍZÍME — každá odrážka je jmenná fráze ve 4. pádě (koho, co):
+      - Mzdu 28 000–37 000 Kč a provize z prodeje
+      - Stravenkový paušál
+      - Pět týdnů dovolené
+      - Zaškolení na bra-fitting a pravidelná školení
+   Drž jeden pád v celém seznamu, nemíchej „mzdu" a „stravenkový paušál" s „nabízíme
+   dovolenou".
+
+B) DOPLNĚK MUSÍ SEDĚT KE SLOVESU. Když věta začne „Baví vás…", pokračování musí být
+   podstatné jméno nebo infinitiv, který k tomu patří: „Baví vás práce s lidmi",
+   „Baví vás poradit". Nikdy nespojuj dvě různé vazby do jedné věty.
+
+C) ČÍSLO A ROD DRŽ V CELÉ VĚTĚ. Když mluvíš o jedné zákaznici, zůstaň u jednotného
+   čísla: „poradit i zákaznici, která si není jistá" — ne „…i tomu, kdo si nejsou
+   jistí".
+
+D) ŽÁDNÉ POLOVIČNÍ VĚTY. Každá odrážka i odstavec musí dávat smysl samostatně,
+   bez domýšlení chybějícího slova.
+
+E) PIŠ SPISOVNĚ. Žádné obecné češtiny („dobrý" místo „dobré"), žádné anglicismy
+   tam, kde je česká varianta („zkušenost", ne „experience"). Výjimka: zavedené
+   odborné názvy, které tým používá — bra-fitting, Styling Days, názvy střihů.
 """
 
 # --------------------------------------------------------------- gender
@@ -125,8 +181,10 @@ A) NÁZEV POZICE — používej obourodý nebo neutrální tvar:
 B) CELÝ TEXT V OBOU RODECH nebo neutrálně. Nikdy nepiš jen ženský rod.
    ŠPATNĚ: „hledáme usměvavou a komunikativní asistentku prodeje"
    SPRÁVNĚ: „hledáme kolegu nebo kolegyni na prodejnu"
-   Místo „budete prodávat" (bez rodu) raději než „budeš prodávala".
-   Oslovení „vy" v přítomném čase se rodu vyhne úplně — používej ho.
+   Vykání v přítomném čase se rodu vyhne úplně, proto ho používej všude:
+   „budete měřit", „poradíte", „naučíte se" — tyhle tvary jsou bez rodu.
+   Pozor na minulý čas a příčestí, tam se rod vždycky projeví: „naučila byste se"
+   je jednorodé, „naučíte se" ne.
 
 C) ZAKÁZANÉ POŽADAVKY, které se čtou jako kód na pohlaví nebo věk:
    - vzhled: „reprezentativní vystupování", „upravený zevnějšek", „hezká"
@@ -134,8 +192,8 @@ C) ZAKÁZANÉ POŽADAVKY, které se čtou jako kód na pohlaví nebo věk:
    - povaha kódovaná mužsky: „dravý", „akční", „odhodlaný"
    - věk: „mladý kolektiv", „do 35 let", „student/ka", „čerstvý absolvent"
    - rodina a zdraví: „bez závazků", „plně flexibilní", „fyzicky zdatný"
-   Vlastnosti nahrazuj popisem činnosti: ne „empatická", ale „vyslechnete, co
-   zákaznice potřebuje, a podle toho vyberete velikost".
+   Vlastnosti nahrazuj popisem činnosti: ne „empatická", ale „Vyslechnete, co
+   zákaznice potřebuje, a podle toho vyberete velikost."
 
 D) VÝJIMKA existuje jen tam, kde druhé pohlaví práci vykonávat nemůže
    (herečka, modelka pro řadu podprsenek). Prodejní asistent/ka mezi ně NEPATŘÍ.

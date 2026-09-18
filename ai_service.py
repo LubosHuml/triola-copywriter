@@ -1343,8 +1343,9 @@ Píšeš pracovní inzeráty na prodejní pozice — texty, na které se lidé s
 Platí pro tebe tón brandbooku Triola: píšeš k člověku, ne do formuláře, věcně a lidsky,
 bez klišé a vycpávek. Vykáš. Nepoužíváš vyprázdněné fráze typu „dynamický kolektiv",
 „práce s lidmi je nás baví" nebo „hledáme posilu do našeho týmu".
-""" + nabor_service.GENDER_PRAVIDLA + nabor_service.ZAMESTNAVATEL \
-    + nabor_service.BEST_PRACTICES + nabor_service.STAVAJICI_INZERAT_CHYBY + """
+""" + nabor_service.CESTINA + nabor_service.GENDER_PRAVIDLA \
+    + nabor_service.ZAMESTNAVATEL + nabor_service.BEST_PRACTICES \
+    + nabor_service.STAVAJICI_INZERAT_CHYBY + """
 ABSOLUTNÍ ZÁKAZ VYMÝŠLENÍ:
 Mzdu, termín nástupu, úvazek, benefity ani kontaktní osobu si NIKDY nedomýšlej.
 Když je nemáš v zadání, napiš na jejich místo „(doplní vedení)". Radši prázdné místo
@@ -1391,14 +1392,18 @@ bra-fitting, měření velikosti, košíčky do L, zaškolení. Popiš skutečn�
 Nezačínej představováním firmy jako ve výroční zprávě.>
 
 CO BUDETE DĚLAT
-<4–6 odrážek, konkrétní činnosti>
+<4–6 odrážek, konkrétní činnosti. Každá odrážka začíná slovesem v infinitivu
+(„Měřit…", „Radit…", „Vybalovat…") — drž stejný tvar v celém seznamu.>
 
 KOHO HLEDÁME
 <maximálně 4 odrážky, jen skutečně nezbytné věci, psané jako chování, ne jako povaha.
+Každá odrážka je CELÁ VĚTA ve 2. osobě množného čísla v přítomném čase, zakončená
+tečkou — „Baví vás…", „Umíte…", „Zvládáte…", „Vyhovuje vám…". Nikdy minulý čas.
 Výslovně napiš, že zkušenost s prádlem není podmínka a že zaškolíte.>
 
 CO NABÍZÍME
-<mzda, benefity, zaškolení, zázemí — odrážky>
+<mzda, benefity, zaškolení — odrážky. Každá je jmenná fráze ve 4. pádě
+(„Mzdu…", „Stravenkový paušál", „Pět týdnů dovolené") — drž jeden pád v celém seznamu.>
 
 JAK SE PŘIHLÁSIT
 <co má člověk udělat, co se stane potom a do kdy se ozvete; nabídka platí
